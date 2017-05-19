@@ -1,15 +1,15 @@
-# Prettier With Tabs
+# Prettier Miscellaneous
 
 [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/jlongster/prettier)
-[![Build Status](https://travis-ci.org/arijs/prettier-with-tabs.svg?branch=master)](https://travis-ci.org/arijs/prettier-with-tabs)
-[![CircleCI Status](https://circleci.com/gh/arijs/prettier-with-tabs.svg?style=shield&circle-token=83f2e43548ccf3827a3a1003a3ff0d5f46996fc2)](https://circleci.com/gh/arijs/prettier-with-tabs)
-[![NPM version](https://img.shields.io/npm/v/prettier-with-tabs.svg)](https://www.npmjs.com/package/prettier-with-tabs)
+[![Build Status](https://travis-ci.org/arijs/prettier-miscellaneous.svg?branch=master)](https://travis-ci.org/arijs/prettier-miscellaneous)
+[![CircleCI Status](https://circleci.com/gh/arijs/prettier-miscellaneous.svg?style=shield&circle-token=5b135ff8817790a20e0eb1c5853752b931bc42c0)](https://circleci.com/gh/arijs/prettier-miscellaneous)
+[![NPM version](https://img.shields.io/npm/v/prettier-miscellaneous.svg)](https://www.npmjs.com/package/prettier-miscellaneous)
 
 > # CONFIGURATION WELCOME
 >
-> This is a fork of [prettier/prettier](https://github.com/prettier/prettier), with an option added to indent lines with tabs. If you have a simple option you want to add to Prettier With Tabs, send a PR!
+> This is a fork of [prettier/prettier](https://github.com/prettier/prettier), with a goal of supporting additional options not picked up by official Prettier.
 >
-> For example, I don't like javascript code without semicolons, but if you can send me a PR which add this ability with as little code as possible, I'll happily accept it! 😃
+> If you want to add an option to Prettier Miscellaneous, please send a PR! 😃
 >
 > ![Happyness](https://i.redd.it/p63sznfyu38y.jpg)
 
