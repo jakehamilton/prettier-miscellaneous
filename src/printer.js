@@ -115,6 +115,54 @@ function genericPrint(path, options, printPath, args) {
   return concat(parts);
 }
 
+function getPropertyPadding(options, path) {
+  if (!options.alignObjectProperties) {
+    return "";
+  }
+
+  const n = path.getValue();
+  const type = n.type;
+
+  const parentNode = path.getParentNode();
+  const isPropertyKey =
+    (parentNode.type === "Property" || parentNode.type === "ObjectProperty") &&
+    parentNode.key === n;
+
+  if (!isPropertyKey) {
+    return "";
+  }
+
+  const parentObject = path.getParentNode(1);
+  const shouldBreak = util.hasNewlineInRange(
+    options.originalText,
+    util.locStart(parentObject),
+    util.locEnd(parentObject)
+  );
+
+  if (!shouldBreak) {
+    return "";
+  }
+
+  const nameLength = type === "Identifier"
+    ? n.name.length
+    : type === "NumericLiteral"
+        ? printNumber(n.extra.raw).length
+        : type === "StringLiteral" ? nodeStr(n, options).length : undefined;
+
+  if (nameLength === undefined) {
+    return "";
+  }
+
+  const properties = parentObject.properties;
+  const keys = properties.map(p => p.key);
+  const lengths = keys.map(k => k.end - k.start);
+  const maxLength = Math.max.apply(null, lengths);
+  const padLength = maxLength - nameLength + 1;
+  const padding = " ".repeat(padLength);
+
+  return padding;
+}
+
 function genericPrintNoParens(path, options, print, args) {
   var n = path.getValue();
   const semi = options.semi ? ";" : "";
@@ -926,9 +974,17 @@ function genericPrintNoParens(path, options, print, args) {
         parts.push(path.call(print, "value"));
       } else {
         if (n.computed) {
-          parts.push("[", path.call(print, "key"), "]");
+          parts.push(
+            "[",
+            path.call(print, "key"),
+            "]",
+            path.call(getPropertyPadding.bind(null, options), "key").slice(2)
+          );
         } else {
-          parts.push(printPropertyKey(path, options, print));
+          parts.push(
+            printPropertyKey(path, options, print),
+            path.call(getPropertyPadding.bind(null, options), "key")
+          );
         }
 
         let printedValue = path.call(print, "value");

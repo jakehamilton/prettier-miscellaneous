@@ -277,6 +277,7 @@ Prettier ships with a handful of customizable format options, usable in both the
 | **Flatten Ternaries** - Format ternaries in a flat style.<br /><br />Valid options: <br /> - `true` <br /> - `false` | `false` | `--flatten-ternaries` | `flattenTernaries: <bool>` |
 | **Break Before Else** - Put `else` clause in a new line.<br /><br />Valid options: <br /> - `true` <br /> - `false` | `false` | `--break-before-else` | `breakBeforeElse: <bool>` |
 | **JSX Brackets on Same Line** - Put the `>` of a multi-line JSX element at the end of the last line instead of being alone on the next line | `false` | `--jsx-bracket-same-line` | `jsxBracketSameLine: <bool>` |
+| **Align Object Properties** - Align colons in multiline object literals. Does nothing if object has computed property names. | `false` | --align-object-properties | `alignObjectProperties: <bool>` |
 | **No Space in Empty Function** - Omit space before empty anonymous function body.<br /><br />Valid options: <br /> - `true` <br /> - `false` | `false` | `--no-space-empty-fn` | `noSpaceEmptyFn: <bool>` |
 | **Parser** - Specify which parser to use. | `babylon` | <code>--parser <flow&#124;babylon></code> | <code>parser: "<flow&#124;babylon>"</code> |
 | **Semicolons** - Print semicolons at the ends of statements.<br /><br />Valid options: <br /> - `true` - add a semicolon at the end of every statement <br /> - `false` - only add semicolons at the beginning of lines that may introduce ASI failures | `true` | `--no-semi` | `semi: <bool>` |
