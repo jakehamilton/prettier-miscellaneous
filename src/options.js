@@ -1,15 +1,15 @@
 "use strict";
 
-var validate = require("jest-validate").validate;
-var deprecatedConfig = require("./deprecated");
-var defaultsTrailingComma = {
+const validate = require("jest-validate").validate;
+const deprecatedConfig = require("./deprecated");
+const defaultsTrailingComma = {
   array: false,
   object: false,
   import: false,
   export: false,
   arguments: false
 };
-var trailingCommaPresets = {
+const trailingCommaPresets = {
   none: Object.assign({}, defaultsTrailingComma),
   es5: Object.assign({}, defaultsTrailingComma, {
     array: true,
@@ -25,7 +25,10 @@ var trailingCommaPresets = {
     arguments: true
   })
 };
-var defaults = {
+
+const defaults = {
+  rangeStart: 0,
+  rangeEnd: Infinity,
   useTabs: false,
   tabWidth: 2,
   printWidth: 80,
@@ -46,7 +49,7 @@ var defaults = {
   __log: false
 };
 
-var exampleConfig = Object.assign({}, defaults, {
+const exampleConfig = Object.assign({}, defaults, {
   filename: "testFilename",
   printWidth: 80,
   originalText: "text"

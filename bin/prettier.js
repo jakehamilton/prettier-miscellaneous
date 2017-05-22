@@ -9,7 +9,7 @@ const chalk = require("chalk");
 const minimist = require("minimist");
 const readline = require("readline");
 const prettier = require("../index");
-const cleanAST = require('../src/clean-ast.js').cleanAST;
+const cleanAST = require("../src/clean-ast.js").cleanAST;
 
 const argv = minimist(process.argv.slice(2), {
   boolean: [
@@ -41,8 +41,21 @@ const argv = minimist(process.argv.slice(2), {
     // Deprecated in 0.0.10
     "flow-parser"
   ],
-  string: ["print-width", "tab-width", "parser", "trailing-comma"],
-  default: { semi: true, color: true, "braces-spacing": true, "space-empty-fn": true, parser: "babylon" },
+  string: [
+    "print-width",
+    "tab-width",
+    "parser",
+    "trailing-comma",
+    "range-start",
+    "range-end"
+  ],
+  default: {
+    semi: true,
+    color: true,
+    "braces-spacing": true,
+    "space-empty-fn": true,
+    parser: "babylon"
+  },
   alias: { help: "h", version: "v", "list-different": "l" },
   unknown: param => {
     if (param.startsWith("-")) {
@@ -125,6 +138,7 @@ function getTrailingComma() {
         "Warning: `--trailing-comma` was used without an argument. This is deprecated. " +
           'Specify "none", "es5", or "all".'
       );
+      return "es5";
     case "es5":
       return "es5";
     case "all":
@@ -138,6 +152,8 @@ function getTrailingComma() {
 }
 
 const options = {
+  rangeStart: getIntOption("range-start"),
+  rangeEnd: getIntOption("range-end"),
   useTabs: argv["use-tabs"],
   semi: argv["semi"],
   printWidth: getIntOption("print-width"),
@@ -165,8 +181,9 @@ function format(input) {
 
   if (argv["debug-check"]) {
     function diff(a, b) {
-      return require("diff")
-        .createTwoFilesPatch("", "", a, b, "", "", { context: 2 });
+      return require("diff").createTwoFilesPatch("", "", a, b, "", "", {
+        context: 2
+      });
     }
 
     const pp = prettier.format(input, options);
@@ -179,14 +196,13 @@ function format(input) {
 
       if (ast !== past) {
         const MAX_AST_SIZE = 2097152; // 2MB
-        const astDiff = (ast.length > MAX_AST_SIZE || past.length > MAX_AST_SIZE)
+        const astDiff = ast.length > MAX_AST_SIZE || past.length > MAX_AST_SIZE
           ? "AST diff too large to render"
           : diff(ast, past);
-        throw (
-          "ast(input) !== ast(prettier(input))\n" +
-          astDiff + "\n" +
-          diff(input, pp)
-        );
+        throw "ast(input) !== ast(prettier(input))\n" +
+          astDiff +
+          "\n" +
+          diff(input, pp);
       }
     }
     return;
@@ -247,6 +263,8 @@ if (argv["help"] || (!filepatterns.length && !stdin)) {
       "                           Align colons in multiline object literals. Does nothing if object has computed property names.\n" +
       "  --no-space-empty-fn      Omit space before empty function body. Defaults to false.\n" +
       "  --parser <flow|babylon>  Specify which parse to use. Defaults to babylon.\n" +
+      "  --range-start <int>      Format code starting at a given character offset. The range will extend backwards to the start of the line. Defaults to 0.\n" +
+      "  --range-end <int>        Format code ending at a given character offset (exclusive). The range will extend forwards to the end of the line. Defaults to Infinity.\n" +
       "  --no-color               Do not colorize error messages.\n" +
       "  --version or -v          Print Prettier version.\n" +
       "\n"
@@ -286,10 +304,11 @@ if (stdin) {
 
     if (argv["list-different"]) {
       if (!prettier.check(input, options)) {
-        console.log(filename);
+        if (!write) {
+          console.log(filename);
+        }
         process.exitCode = 1;
       }
-      return;
     }
 
     const start = Date.now();
@@ -314,9 +333,15 @@ if (stdin) {
       // Don't write the file if it won't change in order not to invalidate
       // mtime based caches.
       if (output === input) {
-        console.log(chalk.grey("%s %dms"), filename, Date.now() - start);
+        if (!argv["list-different"]) {
+          console.log(chalk.grey("%s %dms"), filename, Date.now() - start);
+        }
       } else {
-        console.log("%s %dms", filename, Date.now() - start);
+        if (argv["list-different"]) {
+          console.log(filename);
+        } else {
+          console.log("%s %dms", filename, Date.now() - start);
+        }
 
         try {
           fs.writeFileSync(filename, output, "utf8");
@@ -333,7 +358,7 @@ if (stdin) {
       } else {
         process.exitCode = 2;
       }
-    } else {
+    } else if (!argv["list-different"]) {
       // Don't use `console.log` here since it adds an extra newline at the end.
       process.stdout.write(output);
     }

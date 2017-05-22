@@ -2,10 +2,7 @@
 
 const docBuilders = require("./doc-builders");
 const concat = docBuilders.concat;
-const line = docBuilders.line;
-const softline = docBuilders.softline;
 const fill = docBuilders.fill;
-const ifBreak = docBuilders.ifBreak;
 
 const MODE_BREAK = 1;
 const MODE_FLAT = 2;
@@ -74,8 +71,8 @@ function fits(next, restCommands, width, mustBeFlat) {
     } else {
       switch (doc.type) {
         case "concat":
-          for (var i = doc.parts.length - 1; i >= 0; i--) {
-            cmds.push([ind, mode, doc.parts[i], align]);
+          for (let i = doc.parts.length - 1; i >= 0; i--) {
+            cmds.push([ind, mode, doc.parts[i]]);
           }
 
           break;
@@ -95,7 +92,7 @@ function fits(next, restCommands, width, mustBeFlat) {
 
           break;
         case "fill":
-          for (var i = doc.parts.length - 1; i >= 0; i--) {
+          for (let i = doc.parts.length - 1; i >= 0; i--) {
             cmds.push([ind, mode, doc.parts[i]]);
           }
 
@@ -124,6 +121,7 @@ function fits(next, restCommands, width, mustBeFlat) {
 
                 break;
               }
+              return true;
 
             case MODE_BREAK:
               return true;
@@ -136,14 +134,14 @@ function fits(next, restCommands, width, mustBeFlat) {
 }
 
 function printDocToString(doc, options) {
-  let width = options.printWidth;
-  let newLine = options.newLine || "\n";
+  const width = options.printWidth;
+  const newLine = options.newLine || "\n";
   let pos = 0;
   // cmds is basically a stack. We've turned a recursive call into a
   // while loop which is much faster. The while loop below adds new
   // cmds to the array instead of recursively calling `print`.
-  let cmds = [[rootIndent(), MODE_BREAK, doc]];
-  let out = [];
+  const cmds = [[rootIndent(), MODE_BREAK, doc]];
+  const out = [];
   let shouldRemeasure = false;
   let lineSuffix = [];
 
@@ -161,8 +159,8 @@ function printDocToString(doc, options) {
     } else {
       switch (doc.type) {
         case "concat":
-          for (var i = doc.parts.length - 1; i >= 0; i--) {
-            cmds.push([ind, mode, doc.parts[i], align]);
+          for (let i = doc.parts.length - 1; i >= 0; i--) {
+            cmds.push([ind, mode, doc.parts[i]]);
           }
 
           break;
@@ -176,7 +174,6 @@ function printDocToString(doc, options) {
           break;
         case "group":
           switch (mode) {
-            // fallthrough
             case MODE_FLAT:
               if (!shouldRemeasure) {
                 cmds.push([
@@ -188,12 +185,14 @@ function printDocToString(doc, options) {
 
                 break;
               }
+            // fallthrough
 
-            case MODE_BREAK:
+
+            case MODE_BREAK: {
               shouldRemeasure = false;
 
-              const next = [ind, MODE_FLAT, doc.contents, align];
-              let rem = width - pos;
+              const next = [ind, MODE_FLAT, doc.contents];
+              const rem = width - pos;
 
               if (!doc.break && fits(next, cmds, rem)) {
                 cmds.push(next);
@@ -214,7 +213,7 @@ function printDocToString(doc, options) {
 
                     break;
                   } else {
-                    for (var i = 1; i < doc.expandedStates.length + 1; i++) {
+                    for (let i = 1; i < doc.expandedStates.length + 1; i++) {
                       if (i >= doc.expandedStates.length) {
                         cmds.push([ind, MODE_BREAK, mostExpanded, align]);
 
@@ -237,9 +236,9 @@ function printDocToString(doc, options) {
               }
 
               break;
+            }
           }
           break;
-
         // Fills each line with as much code as possible before moving to a new
         // line with the same indentation.
         //
@@ -261,7 +260,7 @@ function printDocToString(doc, options) {
         // * Neither content item fits on the line without breaking
         //   -> output the first content item and the whitespace with "break".
         case "fill": {
-          let rem = width - pos;
+          const rem = width - pos;
 
           const parts = doc.parts;
           if (parts.length === 0) {
@@ -271,7 +270,7 @@ function printDocToString(doc, options) {
           const content = parts[0];
           const contentFlatCmd = [ind, MODE_FLAT, content];
           const contentBreakCmd = [ind, MODE_BREAK, content];
-          const contentFits = fits(contentFlatCmd, [], width - rem, true)
+          const contentFits = fits(contentFlatCmd, [], width - rem, true);
 
           if (parts.length === 1) {
             if (contentFits) {
@@ -283,8 +282,8 @@ function printDocToString(doc, options) {
           }
 
           const whitespace = parts[1];
-          const whitespaceFlatCmd = [ind, MODE_FLAT, whitespace]
-          const whitespaceBreakCmd = [ind, MODE_BREAK, whitespace]
+          const whitespaceFlatCmd = [ind, MODE_FLAT, whitespace];
+          const whitespaceBreakCmd = [ind, MODE_BREAK, whitespace];
 
           if (parts.length === 2) {
             if (contentFits) {
@@ -301,15 +300,24 @@ function printDocToString(doc, options) {
           const remainingCmd = [ind, mode, fill(remaining)];
 
           const secondContent = parts[2];
-          const firstAndSecondContentFlatCmd = [ind, MODE_FLAT, concat([content, whitespace, secondContent])];
-          const firstAndSecondContentFits = fits(firstAndSecondContentFlatCmd, [], rem, true);
+          const firstAndSecondContentFlatCmd = [
+            ind,
+            MODE_FLAT,
+            concat([content, whitespace, secondContent])
+          ];
+          const firstAndSecondContentFits = fits(
+            firstAndSecondContentFlatCmd,
+            [],
+            rem,
+            true
+          );
 
           if (firstAndSecondContentFits) {
-            cmds.push(remainingCmd)
+            cmds.push(remainingCmd);
             cmds.push(whitespaceFlatCmd);
             cmds.push(contentFlatCmd);
           } else if (contentFits) {
-            cmds.push(remainingCmd)
+            cmds.push(remainingCmd);
             cmds.push(whitespaceBreakCmd);
             cmds.push(contentFlatCmd);
           } else {
@@ -342,7 +350,6 @@ function printDocToString(doc, options) {
           break;
         case "line":
           switch (mode) {
-            // fallthrough
             case MODE_FLAT:
               if (!doc.hard) {
                 if (!doc.soft) {
@@ -361,6 +368,8 @@ function printDocToString(doc, options) {
                 // for nested groups)
                 shouldRemeasure = true;
               }
+            // fallthrough
+
 
             case MODE_BREAK:
               if (lineSuffix.length) {
@@ -391,8 +400,8 @@ function printDocToString(doc, options) {
                   }
                 }
 
-                let length = ind.indent * options.tabWidth + ind.align.spaces;
-                let indentString = options.useTabs
+                const length = ind.indent * options.tabWidth + ind.align.spaces;
+                const indentString = options.useTabs
                   ? "\t".repeat(ind.indent + ind.align.tabs)
                   : " ".repeat(length);
                 out.push(newLine + indentString);

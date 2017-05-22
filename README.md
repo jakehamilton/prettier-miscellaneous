@@ -27,6 +27,7 @@
   * [Vim](#vim)
     + [Other `autocmd` events](#other-autocmd-events)
     + [Customizing Prettier in Vim](#customizing-prettier-in-vim)
+    + [Running Prettier manually in Vim](#running-prettier-manually-in-vim)
   * [Visual Studio Code](#visual-studio-code)
   * [Visual Studio](#visual-studio)
   * [Sublime Text](#sublime-text)
@@ -177,6 +178,12 @@ If you're worried that Prettier will change the correctness of your code, add `-
 This will cause Prettier to print an error message if it detects that code correctness might have changed.
 Note that `--write` cannot be used with `--debug-check`.
 
+Another useful flag is `--list-different` (or `-l`) which prints the filenames of files that are different from Prettier formatting. If there are differences the script errors out, which is useful in a CI scenario.
+
+```bash
+prettier --single-quote --list-different "src/**/*.js"
+```
+
 #### Pre-commit hook for changed files
 
 You can use this with a pre-commit tool. This can re-format your files that are marked as "staged" via `git add`  before you commit.
@@ -263,11 +270,12 @@ Prettier ships with a handful of customizable format options, usable in both the
 
 | Option | Default | CLI override | API override |
 | ------------- | ------------- | ------------- | ------------- |
-| **Tabs** - Indent lines with tabs instead of spaces. | `false` | `--use-tabs` | `useTabs: <bool>` |
-| **Print Width** - Specify the length of line that the printer will wrap on. | `80` | `--print-width <int>`  | `printWidth: <int>`
+| **Print Width** - Specify the length of line that the printer will wrap on.<br /><br /><strong>We strongly recommend against using more than 80 columns</strong>. Prettier works by craming as much content as possible until it reaches the limit, which happens to work well for 80 columns but makes lines that are very crowded. When a bigger column count is used in styleguides, it usually means that code is allowed to go beyond 80 columns, but not to make every single line go there, like prettier would do.  | `80` | `--print-width <int>`  | `printWidth: <int>`
 | **Tab Width** - Specify the number of spaces per indentation-level. | `2` | `--tab-width <int>` | `tabWidth: <int>` |
+| **Tabs** - Indent lines with tabs instead of spaces. | `false` | `--use-tabs` | `useTabs: <bool>` |
+| **Semicolons** - Print semicolons at the ends of statements.<br /><br />Valid options: <br /> - `true` - add a semicolon at the end of every statement <br /> - `false` - only add semicolons at the beginning of lines that may introduce ASI failures | `true` | `--no-semi` | `semi: <bool>` |
 | **Quotes** - Use single quotes instead of double quotes. | `false` | `--single-quote` | `singleQuote: <bool>` |
-| **Trailing Commas** - Print trailing commas wherever possible.<br /><br />Valid options: <br /> - `"none"` - no trailing commas <br /> - `"es5"` - trailing commas where valid in ES5 (objects, arrays, etc) <br /> - `"all"`  - trailing commas wherever possible (function arguments) | `"none"` | <code>--trailing-comma <none&#124;es5&#124;all></code> | <code>trailingComma: "<none&#124;es5&#124;all>"</code> |
+| **Trailing Commas** - Print trailing commas wherever possible.<br /><br />Valid options: <br /> - `"none"` - no trailing commas <br /> - `"es5"` - trailing commas where valid in ES5 (objects, arrays, etc) <br /> - `"all"`  - trailing commas wherever possible (function arguments). This requires node 8 or a [transform](https://babeljs.io/docs/plugins/syntax-trailing-function-commas/). | `"none"` | <code>--trailing-comma <none&#124;es5&#124;all></code> | <code>trailingComma: "<none&#124;es5&#124;all>"</code> |
 | **Trailing Commas (extended)** - You can also customize each place to use trailing commas:<br /><br />Valid options: <br /> - `"array"` <br/> - `"object"` <br /> - `"import"` <br /> - `"export"` <br /> - `"arguments"` | `"none"` | You can use a comma separated string list:<br /><br /><code>--trailing-comma "array,object,import,export,arguments"</code> | You can use a string list or an object:<br /><br /> <code>trailingComma: { array: true, object: true, import: true, export: true, arguments: false }</code> |
 | **Bracket Spacing** - Print spaces between brackets in array literals.<br /><br />Valid options: <br /> - `true` - Example: `[ foo: bar ]` <br /> - `false` - Example: `[foo: bar]` | `true` | `--no-bracket-spacing` | `bracketSpacing: <bool>` |
 | **Braces Spacing** - Print spaces between brackets in object literals.<br /><br />Valid options: <br /> - `true` - Example: `{ foo: bar }` <br /> - `false` - Example: `{foo: bar}` | `true` | `--no-braces-spacing` | `bracesSpacing: <bool>` |
@@ -279,8 +287,9 @@ Prettier ships with a handful of customizable format options, usable in both the
 | **JSX Brackets on Same Line** - Put the `>` of a multi-line JSX element at the end of the last line instead of being alone on the next line | `false` | `--jsx-bracket-same-line` | `jsxBracketSameLine: <bool>` |
 | **Align Object Properties** - Align colons in multiline object literals. Does nothing if object has computed property names. | `false` | --align-object-properties | `alignObjectProperties: <bool>` |
 | **No Space in Empty Function** - Omit space before empty anonymous function body.<br /><br />Valid options: <br /> - `true` <br /> - `false` | `false` | `--no-space-empty-fn` | `noSpaceEmptyFn: <bool>` |
+| **Range Start** - Format code starting at a given character offset. The range will extend backwards to the start of the line. | `0` | `--range-start <int>` | `rangeStart: <int>` |
+| **Range End** - Format code ending at a given character offset (exclusive). The range will extend forwards to the end of the line. | `Infinity` | `--range-end <int>` | `rangeEnd: <int>` |
 | **Parser** - Specify which parser to use. | `babylon` | <code>--parser <flow&#124;babylon></code> | <code>parser: "<flow&#124;babylon>"</code> |
-| **Semicolons** - Print semicolons at the ends of statements.<br /><br />Valid options: <br /> - `true` - add a semicolon at the end of every statement <br /> - `false` - only add semicolons at the beginning of lines that may introduce ASI failures | `true` | `--no-semi` | `semi: <bool>` |
 
 ### Excluding code from formatting
 
@@ -368,6 +377,16 @@ let g:neoformat_try_formatprg = 1
 ```
 
 Each option needs to be escaped with `\`.
+
+#### Running Prettier manually in Vim
+
+If you need a little more control over when prettier is run, you can create a
+custom key binding. In this example, `gp` (mnemonic: "get pretty") is used to
+run prettier (with options) in the currently active buffer:
+
+```vim
+nnoremap gp :silent %!prettier --stdin --trailing-comma all --single-quote<CR>
+```
 
 ### Visual Studio Code
 
@@ -461,6 +480,7 @@ To get up and running, install the dependencies and run the tests:
 
 ```
 yarn
+yarn lint
 yarn test
 ```
 
@@ -484,6 +504,8 @@ Here's what you need to know about the tests:
   or the browser. The easiest way to debug it in the browser is to run the
   interactive `docs` REPL locally. The easiest way to debug it in node, is to
   create a local test file and run it in an editor like VS Code.
+
+Run `yarn lint -- --fix` to automatically format files.
 
 If you can, take look at [commands.md](commands.md) and check out [Wadler's
 paper](http://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf) to

@@ -23,8 +23,11 @@
   },
   "devDependencies": {
     "diff": "3.2.0",
+    "eslint": "^3.19.0",
+    "eslint-plugin-prettier": "^2.1.1",
     "jest": "20.0.0",
     "mkdirp": "^0.5.1",
+    "prettier": "^1.3.1",
     "rimraf": "^2.6.1",
     "rollup": "0.41.1",
     "rollup-plugin-commonjs": "7.0.0",
@@ -33,7 +36,7 @@
     "rollup-plugin-node-globals": "1.1.0",
     "rollup-plugin-node-resolve": "2.0.0",
     "typescript": "2.3.2",
-    "typescript-eslint-parser": "git://github.com/eslint/typescript-eslint-parser.git#f5fcc879b493138eb97b9bdfb39afc4d210b1ddf"
+    "typescript-eslint-parser": "git://github.com/eslint/typescript-eslint-parser.git#b7220fdbf5a923c64bb6e5bbbfc2ad689ec779eb"
   },
   "scripts": {
     "jest": "jest",
@@ -43,6 +46,7 @@
     "format": "./bin/prettier.js --write",
     "format:single": "npm run format -- src/printer.js",
     "format:all": "npm run format -- index.js src/*.js bin/*.js",
+    "lint": "eslint .",
     "build:docs": "rollup -c docs/rollup.config.js"
   },
   "jest": {
@@ -56,23 +60,9 @@
     "testPathIgnorePatterns": [
       "tests/new_react",
       "tests/more_react",
-      "tests/typescript_nosemi/jsfmt.spec.js",
-      "tests/typescript/conformance/types/abstractKeyword/jsfmt.spec.js",
-      "tests/typescript/conformance/classes/classDeclarations/classHeritageSpecification/jsfmt.spec.js",
-      "tests/typescript/compiler/jsfmt.spec.js",
-      "tests/typescript/conformance/types/typeReference/jsfmt.spec.js",
-      "tests/typescript/conformance/types/variableDeclarator/jsfmt.spec.js",
-      "tests/typescript/conformance/types/typeParameter/jsfmt.spec.js",
-      "tests/typescript/custom/computedProperties/jsfmt.spec.js",
-      "tests/typescript/custom/new/jsfmt.spec.js",
-      "tests/typescript/custom/call/jsfmt.spec.js",
-      "tests/typescript/custom/typeParameters/jsfmt.spec.js",
-      "tests/typescript/conformance/internalModules/importDeclarations/jsfmt.spec.js",
-      "tests/typescript/conformance/expressions/functionCalls/jsfmt.spec.js",
-      "tests/typescript/conformance/es6/Symbols/jsfmt.spec.js",
-      "tests/typescript/conformance/classes/jsfmt.spec.js",
-      "tests/typescript/conformance/classes/constructorDeclarations/constructorParameters/jsfmt.spec.js",
-      "tests/typescript/custom/module/jsfmt.spec.js"
+
+      "see https://github.com/eslint/typescript-eslint-parser/issues/269",
+      "tests/typescript/conformance/types/abstractKeyword/jsfmt.spec.js"
     ]
   }
 }

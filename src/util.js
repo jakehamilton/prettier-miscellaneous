@@ -16,7 +16,7 @@ function isExportDeclaration(node) {
 }
 
 function getParentExportDeclaration(path) {
-  var parentNode = path.getParentNode();
+  const parentNode = path.getParentNode();
   if (path.getName() === "declaration" && isExportDeclaration(parentNode)) {
     return parentNode;
   }
@@ -85,7 +85,7 @@ function skipInlineComment(text, index) {
   }
 
   if (text.charAt(index) === "/" && text.charAt(index + 1) === "*") {
-    for (var i = index + 2; i < text.length; ++i) {
+    for (let i = index + 2; i < text.length; ++i) {
       if (text.charAt(i) === "*" && text.charAt(i + 1) === "/") {
         return i + 2;
       }
@@ -152,7 +152,7 @@ function hasNewline(text, index, opts) {
 }
 
 function hasNewlineInRange(text, start, end) {
-  for (var i = start; i < end; ++i) {
+  for (let i = start; i < end; ++i) {
     if (text.charAt(i) === "\n") {
       return true;
     }
@@ -234,7 +234,7 @@ function setLocEnd(node, index) {
   }
 }
 
-var PRECEDENCE = {};
+const PRECEDENCE = {};
 [
   ["||"],
   ["&&"],
@@ -247,8 +247,8 @@ var PRECEDENCE = {};
   ["+", "-"],
   ["*", "/", "%"],
   ["**"]
-].forEach(function(tier, i) {
-  tier.forEach(function(op) {
+].forEach((tier, i) => {
+  tier.forEach(op => {
     PRECEDENCE[op] = i;
   });
 });
@@ -256,7 +256,6 @@ var PRECEDENCE = {};
 function getPrecedence(op) {
   return PRECEDENCE[op];
 }
-
 
 // Tests if an expression starts with `{`, or (if forbidFunctionAndClass holds) `function` or `class`.
 // Will be overzealous if there's already necessary grouping parentheses.
@@ -320,6 +319,25 @@ function isBlockComment(comment) {
   return comment.type === "Block" || comment.type === "CommentBlock";
 }
 
+function getAlignmentSize(value, tabWidth, startIndex) {
+  startIndex = startIndex || 0;
+
+  let size = 0;
+  for (let i = startIndex; i < value.length; ++i) {
+    if (value[i] === "\t") {
+      // Tabs behave in a way that they are aligned to the nearest
+      // multiple of tabWidth:
+      // 0 -> 4, 1 -> 4, 2 -> 4, 3 -> 4
+      // 4 -> 8, 5 -> 8, 6 -> 8, 7 -> 8 ...
+      size = size + tabWidth - size % tabWidth;
+    } else {
+      size++;
+    }
+  }
+
+  return size;
+}
+
 module.exports = {
   getPrecedence,
   isExportDeclaration,
@@ -341,5 +359,6 @@ module.exports = {
   setLocEnd,
   startsWithNoLookaheadToken,
   hasBlockComments,
-  isBlockComment
+  isBlockComment,
+  getAlignmentSize
 };
