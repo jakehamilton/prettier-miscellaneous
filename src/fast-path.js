@@ -295,6 +295,10 @@ FPp.needsParens = function() {
       }
 
     case "BinaryExpression": {
+      if (parent.type === "UpdateExpression") {
+        return true;
+      }
+
       const isLeftOfAForStatement = node => {
         let i = 0;
         while (node) {
@@ -328,6 +332,7 @@ FPp.needsParens = function() {
         case "SpreadElement":
         case "SpreadProperty":
         case "AwaitExpression":
+        case "TSAsExpression":
           return true;
 
         case "MemberExpression":
@@ -498,6 +503,7 @@ FPp.needsParens = function() {
         case "ExportDefaultDeclaration":
         case "AwaitExpression":
         case "JSXSpreadAttribute":
+        case "TSTypeAssertionExpression":
           return true;
 
         case "NewExpression":

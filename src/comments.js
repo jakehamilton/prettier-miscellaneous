@@ -173,6 +173,7 @@ function attach(comments, ast, text) {
         ) ||
         handleOnlyComments(enclosingNode, ast, comment, isLastComment) ||
         handleImportDeclarationComments(
+          text,
           enclosingNode,
           precedingNode,
           comment
@@ -726,6 +727,7 @@ function handleForComments(enclosingNode, precedingNode, comment) {
 }
 
 function handleImportDeclarationComments(
+  text,
   enclosingNode,
   precedingNode,
   comment
@@ -734,7 +736,7 @@ function handleImportDeclarationComments(
     precedingNode &&
     enclosingNode &&
     enclosingNode.type === "ImportDeclaration" &&
-    !util.isBlockComment(comment)
+    util.hasNewline(text, util.locEnd(comment))
   ) {
     addTrailingComment(precedingNode, comment);
     return true;
@@ -939,4 +941,9 @@ function printComments(path, print, options, needsSemi) {
   return concat(leadingParts.concat(trailingParts));
 }
 
-module.exports = { attach, printComments, printDanglingComments };
+module.exports = {
+  attach,
+  printComments,
+  printDanglingComments,
+  getSortedChildNodes
+};

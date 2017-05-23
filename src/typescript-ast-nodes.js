@@ -26,6 +26,13 @@ module.exports = function(fork) {
 
   def("TSType").bases("Node");
 
+  def("TSTupleType")
+    .build("elementTypes")
+    .field("elementTypes", [def("TSType")])
+    .bases("Node");
+
+  def("TSArrayType").bases("Node");
+
   def("TypeElement").bases("Node");
 
   def("TSSignature")
@@ -123,7 +130,10 @@ module.exports = function(fork) {
     .field("typeAnnotation", def("TypeAnnotation"))
     .bases("TSSignature");
 
-  def("TSAsExpression").bases("Expression");
+  def("TSAsExpression")
+    .build("expression")
+    .field("expression", def("Node"))
+    .bases("Expression");
 
   def("TSNamespaceExportDeclaration")
     .bases("Declaration")
@@ -176,7 +186,7 @@ module.exports = function(fork) {
 
   def("TSAbstractClassProperty").build("key", "value").bases("Node");
 
-  def("TSAbstractClassDeclaration").build().bases("Node");
+  def("TSAbstractClassDeclaration").build().bases("ClassDeclaration");
 
   def("TSInterfaceHeritage")
     .build("id", "typeParameters")

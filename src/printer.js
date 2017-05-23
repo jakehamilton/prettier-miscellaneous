@@ -72,13 +72,24 @@ function genericPrint(path, options, printPath, args) {
     // responsible for printing node.decorators.
     !util.getParentExportDeclaration(path)
   ) {
-    const separator = node.decorators.length === 1 &&
-      (node.decorators[0].expression.type === "Identifier" ||
-        node.decorators[0].expression.type === "MemberExpression")
-      ? " "
-      : hardline;
+    let separator = hardline;
     path.each(decoratorPath => {
-      parts.push(printPath(decoratorPath), separator);
+      let prefix = "@";
+      let decorator = decoratorPath.getValue();
+      if (decorator.expression) {
+        decorator = decorator.expression;
+        prefix = "";
+      }
+
+      if (
+        node.decorators.length === 1 &&
+        (decorator.type === "Identifier" ||
+          decorator.type === "MemberExpression")
+      ) {
+        separator = " ";
+      }
+
+      parts.push(prefix, printPath(decoratorPath), separator);
     }, "decorators");
   } else if (
     util.isExportDeclaration(node) &&
@@ -89,7 +100,12 @@ function genericPrint(path, options, printPath, args) {
     // that logically apply to node.declaration.
     path.each(
       decoratorPath => {
-        parts.push(printPath(decoratorPath), line);
+        const decorator = decoratorPath.getValue();
+        const prefix = decorator.type === "Decorator" ||
+          decorator.type === "TSDecorator"
+          ? ""
+          : "@";
+        parts.push(prefix, printPath(decoratorPath), line);
       },
       "declaration",
       "decorators"
@@ -2433,7 +2449,6 @@ function genericPrintNoParens(path, options, print, args) {
       return concat(parts);
     case "TSImportEqualsDeclaration":
       parts.push(
-        softline,
         printTypeScriptModifiers(path, options, print),
         "import ",
         path.call(print, "name"),
@@ -3213,8 +3228,10 @@ function printClass(path, options, print) {
   parts.push("class");
 
   if (n.id) {
-    parts.push(" ", path.call(print, "id"), path.call(print, "typeParameters"));
+    parts.push(" ", path.call(print, "id"));
   }
+
+  parts.push(path.call(print, "typeParameters"));
 
   const partsGroup = [];
   if (n.superClass) {
@@ -3441,6 +3458,7 @@ function printMemberChain(path, options, print) {
   const printedGroups = groups.map(printGroup);
   const oneLine = concat(printedGroups);
   const hasComment =
+    groups[0][groups[0].length - 1].node.comments ||
     (groups.length >= 2 && groups[1][0].node.comments) ||
     (groups.length >= 3 && groups[2][0].node.comments);
 
@@ -3520,7 +3538,8 @@ function printJSXChildren(path, options, print, jsxWhitespace) {
     if (isLiteral && typeof child.value === "string") {
       const value = child.raw || child.extra.raw;
 
-      if (/\S/.test(value)) {
+      // Contains a non-whitespace character
+      if (/[^ \n\r\t]/.test(value)) {
         // treat each line of text as its own entity
         value.split(/(\r?\n\s*)/).forEach(textLine => {
           const newlines = textLine.match(/\n/g);
@@ -3538,18 +3557,27 @@ function printJSXChildren(path, options, print, jsxWhitespace) {
             return;
           }
 
-          const beginSpace = /^\s+/.test(textLine);
+          const beginSpace = /^[ \n\r\t]+/.test(textLine);
           if (beginSpace) {
             children.push(jsxWhitespace);
           } else {
-            children.push(softline);
+            // Ideally this would be a `softline` to allow a break between
+            // tags and text.
+            // Unfortunately Facebook have a custom translation pipeline
+            // (https://github.com/prettier/prettier/issues/1581#issuecomment-300975032)
+            // that uses the JSX syntax, but does not follow the React whitespace
+            // rules.
+            // Ensuring that we never have a break between tags and text in JSX
+            // will allow Facebook to adopt Prettier without too much of an
+            // adverse effect on formatting algorithm.
+            children.push("");
           }
 
-          const stripped = textLine.replace(/^\s+|\s+$/g, "");
+          const stripped = textLine.replace(/^[ \n\r\t]+|[ \n\r\t]+$/g, "");
           if (stripped) {
             // Split text into words separated by "line"s.
-            stripped.split(/(\s+)/).forEach(word => {
-              const space = /\s+/.test(word);
+            stripped.split(/([ \n\r\t]+)/).forEach(word => {
+              const space = /[ \n\r\t]+/.test(word);
               if (space) {
                 children.push(line);
               } else {
@@ -3558,11 +3586,12 @@ function printJSXChildren(path, options, print, jsxWhitespace) {
             });
           }
 
-          const endSpace = /\s+$/.test(textLine);
+          const endSpace = /[ \n\r\t]+$/.test(textLine);
           if (endSpace) {
             children.push(jsxWhitespace);
           } else {
-            children.push(softline);
+            // As above this would ideally be a `softline`.
+            children.push("");
           }
         });
       } else if (/\n/.test(value)) {
@@ -3572,7 +3601,7 @@ function printJSXChildren(path, options, print, jsxWhitespace) {
         if (value.match(/\n/g).length > 1) {
           children.push(hardline);
         }
-      } else if (/\s/.test(value)) {
+      } else if (/[ \n\r\t]/.test(value)) {
         // whitespace(s)-only without newlines,
         // eg; one or more spaces separating two elements
         for (let i = 0; i < value.length; ++i) {
@@ -3671,9 +3700,9 @@ function printJSXElement(path, options, print) {
     children.push(hardline);
   }
 
-  // Trim leading lines, recording if there was a hardline
+  // Trim leading lines (or empty strings), recording if there was a hardline
   let numLeadingHard = 0;
-  while (children.length && isLineNext(children[0])) {
+  while (children.length && (isLineNext(children[0]) || isEmpty(children[0]))) {
     if (willBreak(children[0])) {
       ++numLeadingHard;
       forcedBreak = true;
@@ -3696,6 +3725,11 @@ function printJSXElement(path, options, print) {
         multilineChildren.push(rawJsxWhitespace);
         return;
       } else if (i === 0) {
+        // Fill expects alternating content & whitespace parts
+        // always starting with content.
+        // So we add a dummy content element if we would otherwise start
+        // with whitespace.
+        multilineChildren.push("");
         multilineChildren.push(concat([rawJsxWhitespace, hardline]));
         return;
       } else if (i === children.length - 1) {
