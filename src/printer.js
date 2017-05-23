@@ -1533,8 +1533,13 @@ function genericPrintNoParens(path, options, print, args) {
               .filter(e => e !== null)
           );
         }, "consequent");
+
+        const consequent = n.consequent.filter(
+          node => node.type !== "EmptyStatement"
+        );
+
         parts.push(
-          n.consequent.length === 1 && n.consequent[0].type === "BlockStatement"
+          consequent.length === 1 && consequent[0].type === "BlockStatement"
             ? concat([" ", cons])
             : indent(concat([hardline, cons]))
         );
@@ -3420,6 +3425,15 @@ function printMemberChain(path, options, print) {
       hasSeenCallExpression = true;
     }
     currentGroup.push(printedNodes[i]);
+
+    if (
+      printedNodes[i].node.comments &&
+      printedNodes[i].node.comments.some(comment => comment.trailing)
+    ) {
+      groups.push(currentGroup);
+      currentGroup = [];
+      hasSeenCallExpression = false;
+    }
   }
   if (currentGroup.length > 0) {
     groups.push(currentGroup);
