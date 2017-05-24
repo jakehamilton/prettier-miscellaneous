@@ -1741,7 +1741,15 @@ function genericPrintNoParens(path, options, print, args) {
         parts.push(": ", path.call(print, "typeAnnotation"));
       }
       if (n.value) {
-        parts.push(" = ", path.call(print, "value"));
+        parts.push(
+          " =",
+          printAssignmentRight(
+            n.value,
+            path.call(print, "value"),
+            false, // canBreak
+            options
+          )
+        );
       }
 
       parts.push(semi);
@@ -2472,7 +2480,7 @@ function genericPrintNoParens(path, options, print, args) {
       const parent = path.getParentNode();
       const isExternalModule = namedTypes.Literal.check(n.name);
       const parentIsDeclaration = parent.type === "TSModuleDeclaration";
-      const bodyIsDeclaration = n.body.type === "TSModuleDeclaration";
+      const bodyIsDeclaration = n.body && n.body.type === "TSModuleDeclaration";
 
       if (parentIsDeclaration) {
         parts.push(".");
@@ -2496,13 +2504,15 @@ function genericPrintNoParens(path, options, print, args) {
 
       if (bodyIsDeclaration) {
         parts.push(path.call(print, "body"));
-      } else {
+      } else if (n.body) {
         parts.push(
           " {",
           indent(concat([line, group(path.call(print, "body"))])),
           line,
           "}"
         );
+      } else {
+        parts.push(semi);
       }
 
       return concat(parts);
@@ -2979,7 +2989,8 @@ function printFunctionDeclaration(path, print, options) {
         printReturnType(path, print)
       ])
     ),
-    options.noSpaceEmptyFn ? "" : " ",
+    options.noSpaceEmptyFn ? "" : n.body ? " " : "",
+    //options.noSpaceEmptyFn ? "" : " ",
     path.call(print, "body")
   );
 
@@ -3464,6 +3475,9 @@ function printMemberChain(path, options, print) {
   }
 
   function printIndentedGroup(groups) {
+    if (groups.length === 0) {
+      return "";
+    }
     return indent(
       group(concat([hardline, join(hardline, groups.map(printGroup))]))
     );
@@ -3471,10 +3485,14 @@ function printMemberChain(path, options, print) {
 
   const printedGroups = groups.map(printGroup);
   const oneLine = concat(printedGroups);
+
+  const flatGroups = groups
+    .slice(0, shouldMerge ? 3 : 2)
+    .reduce((res, group) => res.concat(group), []);
+
   const hasComment =
-    groups[0][groups[0].length - 1].node.comments ||
-    (groups.length >= 2 && groups[1][0].node.comments) ||
-    (groups.length >= 3 && groups[2][0].node.comments);
+    flatGroups.slice(1).some(node => hasLeadingComment(node.node)) ||
+    flatGroups.slice(0, -1).some(node => hasTrailingComment(node.node));
 
   // If we only have a single `.`, we shouldn't do anything fancy and just
   // render everything concatenated together.
@@ -4104,6 +4122,14 @@ function isLastStatement(path) {
   const node = path.getValue();
   const body = parent.body.filter(stmt => stmt.type !== "EmptyStatement");
   return body && body[body.length - 1] === node;
+}
+
+function hasLeadingComment(node) {
+  return node.comments && node.comments.some(comment => comment.leading);
+}
+
+function hasTrailingComment(node) {
+  return node.comments && node.comments.some(comment => comment.trailing);
 }
 
 function hasLeadingOwnLineComment(text, node) {

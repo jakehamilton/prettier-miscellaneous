@@ -326,6 +326,8 @@ FPp.needsParens = function() {
         case "NewExpression":
           return name === "callee" && parent.callee === node;
 
+        case "ClassDeclaration":
+          return name === "superClass" && parent.superClass === node;
         case "TSTypeAssertionExpression":
         case "TaggedTemplateExpression":
         case "UnaryExpression":
@@ -340,6 +342,10 @@ FPp.needsParens = function() {
 
         case "BinaryExpression":
         case "LogicalExpression": {
+          if (!node.operator) {
+            return true;
+          }
+
           const po = parent.operator;
           const pp = util.getPrecedence(po);
           const no = node.operator;
@@ -504,6 +510,7 @@ FPp.needsParens = function() {
         case "AwaitExpression":
         case "JSXSpreadAttribute":
         case "TSTypeAssertionExpression":
+        case "TSAsExpression":
           return true;
 
         case "NewExpression":
@@ -550,6 +557,7 @@ FPp.needsParens = function() {
         case "LogicalExpression":
         case "BinaryExpression":
         case "AwaitExpression":
+        case "TSTypeAssertionExpression":
           return true;
 
         case "ConditionalExpression":
