@@ -31,7 +31,7 @@
   * [Visual Studio Code](#visual-studio-code)
   * [Visual Studio](#visual-studio)
   * [Sublime Text](#sublime-text)
-  * [JetBrains](#jetbrains)
+  * [WebStorm](#webstorm)
 - [Language Support](#language-support)
 - [Related Projects](#related-projects)
 - [Technical Details](#technical-details)
@@ -175,8 +175,6 @@ The [glob syntax from the glob module](https://github.com/isaacs/node-glob/blob/
 is used.
 
 Prettier CLI will ignore files located in `node_modules` directory. To opt-out from this behavior use `--with-node-modules` flag.
-
-In the future we will have better support for formatting whole projects.
 
 If you're worried that Prettier will change the correctness of your code, add `--debug-check` to the command.
 This will cause Prettier to print an error message if it detects that code correctness might have changed.
@@ -409,13 +407,10 @@ Install the [JavaScript Prettier extension](https://github.com/madskristensen/Ja
 Sublime Text support is available through Package Control and
 the [JsPrettier](https://packagecontrol.io/packages/JsPrettier) plug-in.
 
-### JetBrains
+### WebStorm
 
-JetBrains users can configure `prettier` as an **External Tool**.
-See [this blog post](https://blog.jetbrains.com/webstorm/2016/08/using-external-tools/) or [this
-directory](https://github.com/jlongster/prettier/tree/master/editors/jetbrains) with examples.
-
-More editors are coming soon.
+See the [WebStorm
+guide](https://github.com/jlongster/prettier/tree/master/editors/webstorm/README.md).
 
 ## Language Support
 
@@ -468,7 +463,6 @@ parens. But if that doesn't fit on one line, the printer can break
 where `line` is specified.
 
 More (rough) details can be found in [commands.md](commands.md).
-Better docs will come soon.
 
 ## Badge
 

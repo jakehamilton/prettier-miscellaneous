@@ -254,10 +254,11 @@ function genericPrintNoParens(path, options, print, args) {
       return printAssignment(
         n.left,
         path.call(print, "left"),
-        n.operator,
+        concat([" ", n.operator]),
         n.right,
         path.call(print, "right"),
-        options
+        options,
+        n.type
       );
     case "BinaryExpression":
     case "LogicalExpression": {
@@ -439,7 +440,7 @@ function genericPrintNoParens(path, options, print, args) {
 
       parts.push(" =>");
 
-      const body = path.call(print, "body");
+      const body = path.call(bodyPath => print(bodyPath, args), "body");
       const collapsed = concat([concat(parts), " ", body]);
 
       // We want to always keep these types of nodes on the same line
@@ -975,35 +976,32 @@ function genericPrintNoParens(path, options, print, args) {
       if (n.shorthand) {
         parts.push(path.call(print, "value"));
       } else {
+        let printedLeft;
+        let propertyPadding = path.call(getPropertyPadding.bind(null, options), "key");
         if (n.computed) {
-          parts.push(
+          printedLeft = concat([
             "[",
             path.call(print, "key"),
             "]",
-            path.call(getPropertyPadding.bind(null, options), "key").slice(2)
-          );
+            propertyPadding.slice(2)
+          ]);
         } else {
-          parts.push(
+          printedLeft = concat([
             printPropertyKey(path, options, print),
-            path.call(getPropertyPadding.bind(null, options), "key")
-          );
+            propertyPadding
+          ]);
         }
-
-        let printedValue = path.call(print, "value");
-        if (!options.breakProperty || shouldPrintSameLine(n.value)) {
-          parts.push(concat([": ", printedValue]));
-        } else {
-          parts.push(
-            group(concat([
-              ":",
-              ifBreak(" (", " "),
-              indent(concat([softline, printedValue])),
-              softline,
-              ifBreak(")")
-            ]))
-          );
-        }
-
+        parts.push(
+          printAssignment(
+            n.key,
+            printedLeft,
+            ":",
+            n.value,
+            path.call(print, "value"),
+            options,
+            n.type
+          )
+        );
       }
 
       return concat(parts); // Babel 6
@@ -1255,10 +1253,11 @@ function genericPrintNoParens(path, options, print, args) {
       return printAssignment(
         n.id,
         concat([path.call(print, "id"), path.call(print, "typeParameters")]),
-        "=",
+        " =",
         n.init,
         n.init && path.call(print, "init"),
-        options
+        options,
+        n.type
       );
     case "WithStatement":
       return group(
@@ -1479,9 +1478,10 @@ function genericPrintNoParens(path, options, print, args) {
     case "CatchClause":
       parts.push("catch (", path.call(print, "param"));
 
-      if (n.guard)
+      if (n.guard) {
         // Note: esprima does not recognize conditional catch clauses.
         parts.push(" if ", path.call(print, "guard"));
+      }
 
       parts.push(") ", path.call(print, "body"));
 
@@ -1495,7 +1495,24 @@ function genericPrintNoParens(path, options, print, args) {
         path.call(print, "discriminant"),
         ") {",
         n.cases.length > 0
-          ? indent(concat([hardline, join(hardline, path.map(print, "cases"))]))
+          ? indent(
+              concat([
+                hardline,
+                join(
+                  hardline,
+                  path.map(casePath => {
+                    const caseNode = casePath.getValue();
+                    return concat([
+                      casePath.call(print),
+                      n.cases.indexOf(caseNode) !== n.cases.length - 1 &&
+                        util.isNextLineEmpty(options.originalText, caseNode)
+                        ? hardline
+                        : ""
+                    ]);
+                  }, "cases")
+                )
+              ])
+            )
           : "",
         hardline,
         "}"
@@ -1507,16 +1524,11 @@ function genericPrintNoParens(path, options, print, args) {
         parts.push("default:");
       }
 
-      const isFirstCase = path.getNode() === path.getParentNode().cases[0];
+      const consequent = n.consequent.filter(
+        node => node.type !== "EmptyStatement"
+      );
 
-      if (
-        !isFirstCase &&
-        util.isPreviousLineEmpty(options.originalText, path.getValue())
-      ) {
-        parts.unshift(hardline);
-      }
-
-      if (n.consequent.find(node => node.type !== "EmptyStatement")) {
+      if (consequent.length > 0) {
         const cons = path.call(consequentPath => {
           return join(
             hardline,
@@ -1533,10 +1545,6 @@ function genericPrintNoParens(path, options, print, args) {
               .filter(e => e !== null)
           );
         }, "consequent");
-
-        const consequent = n.consequent.filter(
-          node => node.type !== "EmptyStatement"
-        );
 
         parts.push(
           consequent.length === 1 && consequent[0].type === "BlockStatement"
@@ -1625,7 +1633,11 @@ function genericPrintNoParens(path, options, print, args) {
       );
     }
     case "JSXElement": {
-      const elem = printJSXElement(path, options, print);
+      const elem = comments.printComments(
+        path,
+        () => printJSXElement(path, options, print),
+        options
+      );
       return maybeWrapJSXElementInParens(path, elem, options);
     }
     case "JSXOpeningElement": {
@@ -1808,7 +1820,11 @@ function genericPrintNoParens(path, options, print, args) {
           const index = value.lastIndexOf("\n");
           const tabWidth = options.tabWidth;
           if (index !== -1) {
-            size = util.getAlignmentSize(value, tabWidth, index + 1);
+            size = util.getAlignmentSize(
+              // All the leading whitespaces
+              value.slice(index + 1).match(/^[ \t]*/)[0],
+              tabWidth
+            );
           }
 
           const aligned = addAlignmentToDoc(expressions[i], size, tabWidth);
@@ -2521,38 +2537,243 @@ function genericPrintNoParens(path, options, print, args) {
       return path.call(bodyPath => {
         return printStatementSequence(bodyPath, options, print);
       }, "body");
-    case "ClassHeritage": // TODO
-    case "ComprehensionBlock": // TODO
-    case "ComprehensionExpression": // TODO
-    case "Glob": // TODO
-    case "GeneratorExpression": // TODO
-    case "LetStatement": // TODO
-    case "LetExpression": // TODO
-    case "GraphExpression": // TODO
-    // XML types that nobody cares about or needs to print. (fallthrough)
-    case "GraphIndexExpression":
-    case "XMLDefaultDeclaration":
-    case "XMLAnyName":
-    case "XMLQualifiedIdentifier":
-    case "XMLFunctionQualifiedIdentifier":
-    case "XMLAttributeSelector":
-    case "XMLFilterExpression":
-    case "XML":
-    case "XMLElement":
-    case "XMLList":
-    case "XMLEscape":
-    case "XMLText":
-    case "XMLStartTag":
-    case "XMLEndTag":
-    case "XMLPointTag":
-    case "XMLName":
-    case "XMLAttribute":
-    case "XMLCdata":
-    case "XMLComment":
-    case "XMLProcessingInstruction":
+    // postcss
+    case "css-root": {
+      return concat([printNodeSequence(path, options, print), hardline]);
+    }
+    case "css-comment": {
+      return n.raws.content;
+    }
+    case "css-rule": {
+      return concat([
+        path.call(print, "selector"),
+        n.nodes
+          ? concat([
+              " {",
+              n.nodes.length > 0
+                ? indent(
+                    concat([hardline, printNodeSequence(path, options, print)])
+                  )
+                : "",
+              hardline,
+              "}"
+            ])
+          : ";"
+      ]);
+    }
+    case "css-decl": {
+      return concat([
+        n.raws.before.trimLeft(),
+        n.prop,
+        ": ",
+        path.call(print, "value"),
+        n.important ? " !important" : "",
+        ";"
+      ]);
+    }
+    case "css-atrule": {
+      return concat([
+        "@",
+        n.name,
+        " ",
+        path.call(print, "params"),
+        n.nodes
+          ? concat([
+              " {",
+              indent(
+                concat([softline, printNodeSequence(path, options, print)])
+              ),
+              softline,
+              "}"
+            ])
+          : ";"
+      ]);
+    }
+    case "css-import": {
+      return concat(["@", n.name, " ", n.importPath, ";"]);
+    }
+    // postcss-media-query-parser
+    case "media-query-list": {
+      return join(", ", path.map(print, "nodes"));
+    }
+    case "media-query": {
+      return join(" ", path.map(print, "nodes"));
+    }
+    case "media-type": {
+      return n.value;
+    }
+    case "media-feature-expression": {
+      if (!n.nodes) {
+        return n.value;
+      }
+      return concat(["(", concat(path.map(print, "nodes")), ")"]);
+    }
+    case "media-feature": {
+      return n.value;
+    }
+    case "media-colon": {
+      return concat([n.value, " "]);
+    }
+    case "media-value": {
+      return n.value;
+    }
+    case "media-keyword": {
+      return concat([" ", n.value, " "]);
+    }
+    case "media-unknown": {
+      return n.value;
+    }
+    // postcss-selector-parser
+    case "selector-root": {
+      return group(join(concat([",", line]), path.map(print, "nodes")));
+    }
+    case "selector-tag": {
+      return n.value;
+    }
+    case "selector-id": {
+      return concat(["#", n.value]);
+    }
+    case "selector-class": {
+      return concat([".", n.value]);
+    }
+    case "selector-attribute": {
+      return concat([
+        "[",
+        n.attribute,
+        n.operator ? n.operator : "",
+        n.value ? n.value : "",
+        "]"
+      ]);
+    }
+    case "selector-combinator": {
+      if (n.value === "+" || n.value === ">") {
+        return concat([" ", n.value, " "]);
+      }
+      return n.value;
+    }
+    case "selector-universal": {
+      return n.value;
+    }
+    case "selector-selector": {
+      return concat(path.map(print, "nodes"));
+    }
+    case "selector-pseudo": {
+      return concat([
+        n.value,
+        n.nodes && n.nodes.length > 0
+          ? concat(["(", concat(path.map(print, "nodes")), ")"])
+          : ""
+      ]);
+    }
+    case "selector-nesting": {
+      return printValue(n.value);
+    }
+    // postcss-values-parser
+    case "value-root": {
+      return path.call(print, "group");
+    }
+    case "value-comma_group": {
+      const printed = path.map(print, "groups");
+      const parts = [];
+      for (let i = 0; i < n.groups.length; ++i) {
+        parts.push(printed[i]);
+        if (i === 0 && n.groups[i].type === "value-operator") {
+          continue;
+        }
+        if (i !== n.groups.length - 1) {
+          parts.push(line);
+        }
+      }
+
+      return group(concat(parts));
+    }
+    case "value-paren_group": {
+      if (!n.open) {
+        return join(concat([",", line]), path.map(print, "groups"));
+      }
+
+      return group(
+        concat([
+          n.open ? path.call(print, "open") : "",
+          indent(
+            concat([
+              softline,
+              join(concat([",", line]), path.map(print, "groups"))
+            ])
+          ),
+          softline,
+          n.close ? path.call(print, "close") : ""
+        ])
+      );
+    }
+    case "value-value": {
+      return path.call(print, "group");
+    }
+    case "value-func": {
+      return concat([n.value, path.call(print, "group")]);
+    }
+    case "value-paren": {
+      return n.value;
+    }
+    case "value-number": {
+      return concat([n.value, n.unit]);
+    }
+    case "value-operator": {
+      return n.value;
+    }
+    case "value-word": {
+      return n.value;
+    }
+    case "value-comma": {
+      return concat([n.value, " "]);
+    }
+    case "value-string": {
+      return concat([
+        n.quoted ? n.raws.quote : "",
+        n.value,
+        n.quoted ? n.raws.quote : ""
+      ]);
+    }
+    case "value-atword": {
+      return concat(["@", n.value]);
+    }
+
     default:
       throw new Error("unknown type: " + JSON.stringify(n.type));
   }
+}
+
+function printValue(value) {
+  return value;
+}
+
+function printNodeSequence(path, options, print) {
+  const node = path.getValue();
+  const parts = [];
+  let i = 0;
+  path.map(pathChild => {
+    parts.push(pathChild.call(print));
+    if (i !== node.nodes.length - 1) {
+      if (
+        node.nodes[i + 1].type === "css-comment" &&
+        !util.hasNewline(
+          options.originalText,
+          util.locStart(node.nodes[i + 1]),
+          { backwards: true }
+        )
+      ) {
+        parts.push(" ");
+      } else {
+        parts.push(hardline);
+        if (util.isNextLineEmpty(options.originalText, pathChild.getValue())) {
+          parts.push(hardline);
+        }
+      }
+    }
+    i++;
+  }, "nodes");
+
+  return concat(parts);
 }
 
 function printStatementSequence(path, options, print) {
@@ -3952,13 +4173,15 @@ function printAssignment(
   operator,
   rightNode,
   printedRight,
-  options
+  options,
+  type
 ) {
   if (!rightNode) {
     return printedLeft;
   }
 
   const canBreak =
+    (options.breakProperty && type === "Property") ||
     (isBinaryish(rightNode) && !shouldInlineLogicalExpression(rightNode)) ||
     ((leftNode.type === "Identifier" || leftNode.type === "MemberExpression") &&
       (rightNode.type === "StringLiteral" ||
@@ -3972,7 +4195,7 @@ function printAssignment(
     options
   );
 
-  return group(concat([printedLeft, " ", operator, printed]));
+  return group(concat([printedLeft, operator, printed]));
 }
 
 function adjustClause(node, clause, forceSpace) {
@@ -4133,6 +4356,10 @@ function hasTrailingComment(node) {
 }
 
 function hasLeadingOwnLineComment(text, node) {
+  if (node.type === "JSXElement") {
+    return false;
+  }
+
   const res =
     node.comments &&
     node.comments.some(
@@ -4449,6 +4676,12 @@ function printAstToDoc(ast, options, addAlignmentSize) {
   addAlignmentSize = addAlignmentSize || 0;
 
   function printGenerically(path, args) {
+    const node = path.getValue();
+    // We let JSXElement print its comments itself because it adds () around
+    if (node && node.type === "JSXElement") {
+      return genericPrint(path, options, printGenerically, args);
+    }
+
     return comments.printComments(
       path,
       p => genericPrint(p, options, printGenerically, args),

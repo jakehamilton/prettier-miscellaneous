@@ -269,6 +269,10 @@ jest.mock(
     }
   },
 );
+
+fooooooooooooooooooooooooooooooooooooooooooooooooooo(action => next =>
+    dispatch(action),
+);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Seq(typeDef.interface.groups).forEach(group =>
   Seq(group.members).forEach((member, memberName) =>
@@ -352,6 +356,10 @@ jest.mock(
     }
 );
 
+fooooooooooooooooooooooooooooooooooooooooooooooooooo(action => next =>
+  dispatch(action)
+);
+
 `;
 
 exports[`call.js 2`] = `
@@ -430,6 +438,10 @@ jest.mock(
       return {paths: []};
     }
   },
+);
+
+fooooooooooooooooooooooooooooooooooooooooooooooooooo(action => next =>
+    dispatch(action),
 );
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Seq(typeDef.interface.groups).forEach((group) =>
@@ -512,6 +524,10 @@ jest.mock(
         return { paths: [] };
       }
     }
+);
+
+fooooooooooooooooooooooooooooooooooooooooooooooooooo((action) => (next) =>
+  dispatch(action)
 );
 
 `;

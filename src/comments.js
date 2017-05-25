@@ -27,7 +27,11 @@ function getSortedChildNodes(node, text, resultArray) {
   }
 
   if (resultArray) {
-    if (n.Node.check(node) && node.type !== "EmptyStatement") {
+    if (
+      n.Node.check(node) &&
+      node.type !== "EmptyStatement" &&
+      node.type !== "TemplateElement"
+    ) {
       // This reverse insertion sort almost always takes constant
       // time because we almost always (maybe always?) append the
       // nodes in order anyway.
@@ -116,6 +120,29 @@ function decorateComment(node, comment, text) {
     throw new Error("Comment location overlaps with node location");
   }
 
+  // We don't want comments inside of different expressions inside of the same
+  // template literal to move to another expression.
+  if (
+    comment.enclosingNode &&
+    comment.enclosingNode.type === "TemplateLiteral"
+  ) {
+    const quasis = comment.enclosingNode.quasis;
+    const commentIndex = findExpressionIndexForComment(quasis, comment);
+
+    if (
+      precedingNode &&
+      findExpressionIndexForComment(quasis, precedingNode) !== commentIndex
+    ) {
+      precedingNode = null;
+    }
+    if (
+      followingNode &&
+      findExpressionIndexForComment(quasis, followingNode) !== commentIndex
+    ) {
+      followingNode = null;
+    }
+  }
+
   if (precedingNode) {
     comment.precedingNode = precedingNode;
   }
@@ -178,7 +205,6 @@ function attach(comments, ast, text) {
           precedingNode,
           comment
         ) ||
-        handleTemplateLiteralComments(enclosingNode, comment) ||
         handleAssignmentPatternComments(enclosingNode, comment)
       ) {
         // We're good
@@ -210,7 +236,6 @@ function attach(comments, ast, text) {
           text
         ) ||
         handleImportSpecifierComments(enclosingNode, comment) ||
-        handleTemplateLiteralComments(enclosingNode, comment) ||
         handleIfStatementComments(
           text,
           precedingNode,
@@ -251,7 +276,6 @@ function attach(comments, ast, text) {
           comment
         ) ||
         handleObjectPropertyAssignment(enclosingNode, precedingNode, comment) ||
-        handleTemplateLiteralComments(enclosingNode, comment) ||
         handleCommentInEmptyParens(text, enclosingNode, comment) ||
         handleOnlyComments(enclosingNode, ast, comment, isLastComment)
       ) {
@@ -515,25 +539,6 @@ function handleObjectPropertyAssignment(enclosingNode, precedingNode, comment) {
   return false;
 }
 
-function handleTemplateLiteralComments(enclosingNode, comment) {
-  if (enclosingNode && enclosingNode.type === "TemplateLiteral") {
-    const followingNode = comment.followingNode;
-    if (followingNode && followingNode.type !== "TemplateElement") {
-      addTrailingComment(followingNode, comment);
-      return true;
-    }
-    const expressionIndex = findExpressionIndexForComment(
-      enclosingNode.quasis,
-      comment
-    );
-    // Enforce all comments to be leading block comments.
-    comment.type = "CommentBlock";
-    addTrailingComment(enclosingNode.expressions[expressionIndex], comment);
-    return true;
-  }
-  return false;
-}
-
 function handleCommentInEmptyParens(text, enclosingNode, comment) {
   if (getNextNonSpaceNonCommentCharacter(text, comment) !== ")") {
     return false;
@@ -786,7 +791,7 @@ function handleVariableDeclaratorComments(
   return false;
 }
 
-function printComment(commentPath) {
+function printComment(commentPath, options) {
   const comment = commentPath.getValue();
   comment.printed = true;
 
@@ -796,6 +801,10 @@ function printComment(commentPath) {
       return "/*" + comment.value + "*/";
     case "CommentLine":
     case "Line":
+      // Don't print the shebang, it's taken care of in index.js
+      if (options.originalText.slice(util.locStart(comment)).startsWith("#!")) {
+        return "";
+      }
       return "//" + comment.value;
     default:
       throw new Error("Not a comment: " + JSON.stringify(comment));
@@ -827,7 +836,10 @@ function getQuasiRange(expr) {
 
 function printLeadingComment(commentPath, print, options) {
   const comment = commentPath.getValue();
-  const contents = printComment(commentPath);
+  const contents = printComment(commentPath, options);
+  if (!contents) {
+    return "";
+  }
   const isBlock = util.isBlockComment(comment);
 
   // Leading block comments should see if they need to stay on the
@@ -844,7 +856,10 @@ function printLeadingComment(commentPath, print, options) {
 
 function printTrailingComment(commentPath, print, options) {
   const comment = commentPath.getValue();
-  const contents = printComment(commentPath);
+  const contents = printComment(commentPath, options);
+  if (!contents) {
+    return "";
+  }
   const isBlock = util.isBlockComment(comment);
 
   if (
@@ -890,8 +905,8 @@ function printDanglingComments(path, options, sameIndent) {
 
   path.each(commentPath => {
     const comment = commentPath.getValue();
-    if (!comment.leading && !comment.trailing) {
-      parts.push(printComment(commentPath));
+    if (comment && !comment.leading && !comment.trailing) {
+      parts.push(printComment(commentPath, options));
     }
   }, "comments");
 
@@ -925,7 +940,11 @@ function printComments(path, print, options, needsSemi) {
     const trailing = types.getFieldValue(comment, "trailing");
 
     if (leading) {
-      leadingParts.push(printLeadingComment(commentPath, print, options));
+      const contents = printLeadingComment(commentPath, print, options);
+      if (!contents) {
+        return;
+      }
+      leadingParts.push(contents);
 
       const text = options.originalText;
       if (util.hasNewline(text, util.skipNewline(text, util.locEnd(comment)))) {

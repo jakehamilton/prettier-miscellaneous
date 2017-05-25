@@ -4,4 +4,6 @@ npm-debug.log
 /bin/prettier-spaces.js
 /errors
 /test.js
+/test.ts
+/test.css
 /.vscode

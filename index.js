@@ -29,6 +29,10 @@ function attachComments(text, ast, opts) {
 }
 
 function ensureAllCommentsPrinted(astComments) {
+  if (!astComments) {
+    return;
+  }
+
   for (let i = 0; i < astComments.length; ++i) {
     if (astComments[i].value.trim() === "prettier-ignore") {
       // If there's a prettier-ignore, we're not printing that sub-tree so we
@@ -231,11 +235,10 @@ function formatWithShebang(text, opts) {
 
   const index = text.indexOf("\n");
   const shebang = text.slice(0, index + 1);
-  const programText = text.slice(index + 1);
   const nextChar = text.charAt(index + 1);
   const newLine = nextChar === "\n" ? "\n" : nextChar === "\r" ? "\r\n" : "";
 
-  return shebang + newLine + format(programText, opts);
+  return shebang + newLine + format(text, opts);
 }
 
 module.exports = {
