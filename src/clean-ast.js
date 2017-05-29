@@ -28,7 +28,9 @@ function massageAST(ast) {
 
     const newObj = {};
     for (const key in ast) {
-      newObj[key] = massageAST(ast[key]);
+      if (typeof ast[key] !== "function") {
+        newObj[key] = massageAST(ast[key]);
+      }
     }
 
     [
@@ -48,7 +50,8 @@ function massageAST(ast) {
       "id",
       "source",
       "before",
-      "after"
+      "after",
+      "trailingComma"
     ].forEach(name => {
       delete newObj[name];
     });
@@ -59,6 +62,47 @@ function massageAST(ast) {
       ast.type === "media-feature-expression"
     ) {
       delete newObj.value;
+    }
+
+    if (ast.type === "css-rule") {
+      delete newObj.params;
+    }
+
+    if (ast.type === "media-feature") {
+      newObj.value = newObj.value.replace(/ /g, "");
+    }
+
+    // (TypeScript) Ignore `static` in `constructor(static p) {}`
+    // and `export` in `constructor(export p) {}`
+    if (
+      ast.type === "TSParameterProperty" &&
+      ast.accessibility === null &&
+      !ast.readonly
+    ) {
+      return {
+        type: "Identifier",
+        name: ast.parameter.name,
+        typeAnnotation: newObj.parameter.typeAnnotation,
+        decorators: newObj.decorators
+      };
+    }
+
+    // (TypeScript) ignore empty `specifiers` array
+    if (
+      ast.type === "TSNamespaceExportDeclaration" &&
+      ast.specifiers &&
+      ast.specifiers.length === 0
+    ) {
+      delete newObj.specifiers;
+    }
+
+    // (TypeScript) allow parenthesization of TSFunctionType
+    if (
+      ast.type === "TSParenthesizedType" &&
+      ast.typeAnnotation.type === "TypeAnnotation" &&
+      ast.typeAnnotation.typeAnnotation.type === "TSFunctionType"
+    ) {
+      return newObj.typeAnnotation.typeAnnotation;
     }
 
     // We convert <div></div> to <div />

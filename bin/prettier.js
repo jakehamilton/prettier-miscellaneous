@@ -9,7 +9,7 @@ const glob = require("glob");
 const chalk = require("chalk");
 const minimist = require("minimist");
 const readline = require("readline");
-const prettier = require("../index");
+const prettier = eval("require")("../index");
 const cleanAST = require("../src/clean-ast.js").cleanAST;
 
 const argv = minimist(process.argv.slice(2), {
@@ -239,7 +239,7 @@ function handleError(filename, e) {
     // If validation fails for one file, it will fail for all of them.
     process.exit(1);
   } else {
-    console.error(filename + ":", e);
+    console.error(filename + ":", e.stack || e);
   }
 
   // Don't exit the process if one file failed
