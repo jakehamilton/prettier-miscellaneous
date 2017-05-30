@@ -2636,13 +2636,14 @@ function genericPrintNoParens(path, options, print, args) {
         return n.raws.content;
       }
       const text = options.originalText.slice(util.locStart(n), util.locEnd(n));
+      const rawText = n.raws.text || n.text;
       // Workaround a bug where the location is off.
       // https://github.com/postcss/postcss-scss/issues/63
-      if (text.indexOf(n.text) === -1) {
+      if (text.indexOf(rawText) === -1) {
         if (n.raws.inline) {
-          return concat(["// ", n.text]);
+          return concat(["// ", rawText]);
         }
-        return concat(["/* ", n.text, " */"]);
+        return concat(["/* ", rawText, " */"]);
       }
       return text;
     }
@@ -2789,7 +2790,12 @@ function genericPrintNoParens(path, options, print, args) {
     }
     case "selector-combinator": {
       if (n.value === "+" || n.value === ">" || n.value === "~") {
-        return concat([" ", n.value, " "]);
+        const parent = path.getParentNode();
+        const leading = parent.type === "selector-selector" &&
+          parent.nodes[0] === n
+          ? ""
+          : line;
+        return concat([leading, n.value, " "]);
       }
       return n.value;
     }
@@ -2797,7 +2803,7 @@ function genericPrintNoParens(path, options, print, args) {
       return n.value;
     }
     case "selector-selector": {
-      return concat(path.map(print, "nodes"));
+      return group(indent(concat(path.map(print, "nodes"))));
     }
     case "selector-pseudo": {
       return concat([
@@ -2885,6 +2891,9 @@ function genericPrintNoParens(path, options, print, args) {
       return concat([n.value, path.call(print, "group")]);
     }
     case "value-paren": {
+      if (n.raws.before !== "") {
+        return concat([line, n.value]);
+      }
       return n.value;
     }
     case "value-number": {
@@ -3319,6 +3328,8 @@ function printFunctionParams(path, print, options, expandArg) {
     fun[paramsField][0].typeAnnotation &&
     flowTypeAnnotations.indexOf(fun[paramsField][0].typeAnnotation.type) !==
       -1 &&
+    !(fun[paramsField][0].typeAnnotation.type === "GenericTypeAnnotation" &&
+      fun[paramsField][0].typeAnnotation.typeParameters) &&
     !fun.rest;
 
   if (isFlowShorthandWithOneArg) {
