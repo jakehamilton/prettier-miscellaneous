@@ -1,5 +1,38 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`indent.js 1`] = `
+aaaaaaaaaaaaaaa ? bbbbbbbbbbbbbbbbbb : ccccccccccccccc ? ddddddddddddddd : eeeeeeeeeeeeeee ? fffffffffffffff : gggggggggggggggg
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+aaaaaaaaaaaaaaa
+  ? bbbbbbbbbbbbbbbbbb
+  : ccccccccccccccc
+    ? ddddddddddddddd
+    : eeeeeeeeeeeeeee ? fffffffffffffff : gggggggggggggggg;
+
+`;
+
+exports[`indent.js 2`] = `
+aaaaaaaaaaaaaaa ? bbbbbbbbbbbbbbbbbb : ccccccccccccccc ? ddddddddddddddd : eeeeeeeeeeeeeee ? fffffffffffffff : gggggggggggggggg
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+aaaaaaaaaaaaaaa
+    ? bbbbbbbbbbbbbbbbbb
+    : ccccccccccccccc
+      ? ddddddddddddddd
+      : eeeeeeeeeeeeeee ? fffffffffffffff : gggggggggggggggg;
+
+`;
+
+exports[`indent.js 3`] = `
+aaaaaaaaaaaaaaa ? bbbbbbbbbbbbbbbbbb : ccccccccccccccc ? ddddddddddddddd : eeeeeeeeeeeeeee ? fffffffffffffff : gggggggggggggggg
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  aaaaaaaaaaaaaaa ? bbbbbbbbbbbbbbbbbb :
+  ccccccccccccccc ? ddddddddddddddd :
+  eeeeeeeeeeeeeee ? fffffffffffffff :
+  gggggggggggggggg;
+
+`;
+
 exports[`nested.js 1`] = `
 const value = condition1
   ? value1

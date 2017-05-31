@@ -710,6 +710,9 @@ function genericPrintNoParens(path, options, print, args) {
           parent.type === "FunctionDeclaration" ||
           parent.type === "ObjectMethod" ||
           parent.type === "ClassMethod" ||
+          parent.type === "ForStatement" ||
+          parent.type === "WhileStatement" ||
+          parent.type === "DoWhileStatement" ||
           (parent.type === "CatchClause" && !parentParent.finalizer))
       ) {
         return "{}";
@@ -1183,9 +1186,9 @@ function genericPrintNoParens(path, options, print, args) {
       }
 
       return concat(parts);
-    case "ConditionalExpression":
+    case "ConditionalExpression": {
+      const parent = path.getParentNode();
       if (options.flattenTernaries) {
-        const parent = path.getParentNode();
         const subTernary = parent.type === n.type;
         const parts = [
           path.call(print, "test"),
@@ -1201,28 +1204,25 @@ function genericPrintNoParens(path, options, print, args) {
           : indent(concat([softline].concat(parts)))
         );
       } else {
+        const printed = concat([
+          line,
+          "? ",
+          n.consequent.type === "ConditionalExpression" ? ifBreak("", "(") : "",
+          align(2, path.call(print, "consequent")),
+          n.consequent.type === "ConditionalExpression" ? ifBreak("", ")") : "",
+          line,
+          ": ",
+          align(2, path.call(print, "alternate"))
+        ]);
+
         return group(
           concat([
             path.call(print, "test"),
-            indent(
-              concat([
-                line,
-                "? ",
-                n.consequent.type === "ConditionalExpression"
-                  ? ifBreak("", "(")
-                  : "",
-                align(2, path.call(print, "consequent")),
-                n.consequent.type === "ConditionalExpression"
-                  ? ifBreak("", ")")
-                  : "",
-                line,
-                ": ",
-                align(2, path.call(print, "alternate"))
-              ])
-            )
+            parent.type === "ConditionalExpression" ? printed : indent(printed)
           ])
         );
       }
+    }
     case "NewExpression":
       parts.push(
         "new ",
@@ -3664,7 +3664,7 @@ function printClass(path, options, print) {
     partsGroup.push(
       line,
       "implements ",
-      indent(join(concat([",", line]), path.map(print, "implements")))
+      group(indent(join(concat([",", line]), path.map(print, "implements"))))
     );
   }
 
