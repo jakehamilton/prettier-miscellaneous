@@ -27,6 +27,7 @@ const trailingCommaPresets = {
 };
 
 const defaults = {
+  cursorOffset: -1,
   rangeStart: 0,
   rangeEnd: Infinity,
   useTabs: false,
@@ -54,6 +55,35 @@ const exampleConfig = Object.assign({}, defaults, {
   printWidth: 80,
   originalText: "text"
 });
+
+// Copy options and fill in default values.
+function normalize(options) {
+  const normalized = Object.assign({}, options || {});
+  const filepath = normalized.filepath;
+
+  if (/\.(css|less|scss)$/.test(filepath)) {
+    normalized.parser = "postcss";
+  } else if (/\.(ts|tsx)$/.test(filepath)) {
+    normalized.parser = "typescript";
+  }
+
+  normalized.trailingComma = normalizeTrailingComma(normalized.trailingComma);
+  validate(normalized, { exampleConfig, deprecatedConfig });
+
+  // For backward compatibility. Deprecated in 0.0.10
+  if ("useFlowParser" in normalized) {
+    normalized.parser = normalized.useFlowParser ? "flow" : "babylon";
+    delete normalized.useFlowParser;
+  }
+
+  Object.keys(defaults).forEach(k => {
+    if (normalized[k] == null) {
+      normalized[k] = defaults[k];
+    }
+  });
+
+  return normalized;
+}
 
 function normalizeTrailingComma(value) {
   var trailingComma;
@@ -89,35 +119,6 @@ function normalizeTrailingComma(value) {
     trailingComma = Object.assign({}, defaultsTrailingComma);
   }
   return trailingComma;
-}
-
-// Copy options and fill in default values.
-function normalize(options) {
-  const normalized = Object.assign({}, options || {});
-  const filepath = normalized.filepath;
-
-  if (/\.(css|less|scss)$/.test(filepath)) {
-    normalized.parser = "postcss";
-  } else if (/\.(ts|tsx)$/.test(filepath)) {
-    normalized.parser = "typescript";
-  }
-
-  normalized.trailingComma = normalizeTrailingComma(normalized.trailingComma);
-  validate(normalized, { exampleConfig, deprecatedConfig });
-
-  // For backward compatibility. Deprecated in 0.0.10
-  if ("useFlowParser" in normalized) {
-    normalized.parser = normalized.useFlowParser ? "flow" : "babylon";
-    delete normalized.useFlowParser;
-  }
-
-  Object.keys(defaults).forEach(k => {
-    if (normalized[k] == null) {
-      normalized[k] = defaults[k];
-    }
-  });
-
-  return normalized;
 }
 
 module.exports = { normalize };

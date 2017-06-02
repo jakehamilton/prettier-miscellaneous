@@ -77,10 +77,18 @@ function genericPrint(path, options, printPath, args) {
         prefix = "";
       }
 
+      // #1817
       if (
         node.decorators.length === 1 &&
+        node.type !== "ClassDeclaration" &&
+        node.type !== "MethodDefinition" &&
         (decorator.type === "Identifier" ||
-          decorator.type === "MemberExpression")
+          decorator.type === "MemberExpression" ||
+          (decorator.type === "CallExpression" &&
+            decorator.arguments.length === 1 &&
+            (isStringLiteral(decorator.arguments[0]) ||
+              decorator.arguments[0].type === "Identifier" ||
+              decorator.arguments[0].type === "MemberExpression")))
       ) {
         separator = " ";
       }
@@ -498,11 +506,11 @@ function genericPrintNoParens(path, options, print, args) {
     }
     case "MethodDefinition":
     case "TSAbstractMethodDefinition":
-      if (n.static) {
-        parts.push("static ");
-      }
       if (n.accessibility) {
         parts.push(n.accessibility + " ");
+      }
+      if (n.static) {
+        parts.push("static ");
       }
       if (n.type === "TSAbstractMethodDefinition") {
         parts.push("abstract ");
@@ -1764,6 +1772,9 @@ function genericPrintNoParens(path, options, print, args) {
       if (n.type === "TSAbstractClassProperty") {
         parts.push("abstract ");
       }
+      if (n.readonly) {
+        parts.push("readonly ");
+      }
       if (n.computed) {
         parts.push("[", path.call(print, "key"), "]");
       } else {
@@ -1896,7 +1907,10 @@ function genericPrintNoParens(path, options, print, args) {
               printArrayItems(path, options, typesField, print)
             ])
           ),
-          ifBreak(shouldPrintComma(options, "array") ? "," : ""),
+          // TypeScript doesn't support trailing commas in tuple types
+          n.type === "TSTupleType"
+            ? ""
+            : ifBreak(shouldPrintComma(options, "array") ? "," : ""),
           comments.printDanglingComments(path, options, /* sameIndent */ true),
           softline,
           "]"
@@ -1966,9 +1980,10 @@ function genericPrintNoParens(path, options, print, args) {
       const parentParentParent = path.getParentNode(2);
       let isArrowFunctionTypeAnnotation =
         n.type === "TSFunctionType" ||
-        !((!getFlowVariance(parent) &&
+        !((parent.type === "ObjectTypeProperty" &&
+          !getFlowVariance(parent) &&
           !parent.optional &&
-          parent.type === "ObjectTypeProperty") ||
+          util.locStart(parent) === util.locStart(n)) ||
           parent.type === "ObjectTypeCallProperty" ||
           (parentParentParent &&
             parentParentParent.type === "DeclareFunction"));
@@ -2323,6 +2338,7 @@ function genericPrintNoParens(path, options, print, args) {
       if (n.static) {
         parts.push("static ");
       }
+
       if (n.readonly) {
         parts.push("readonly ");
       }
@@ -2496,7 +2512,15 @@ function genericPrintNoParens(path, options, print, args) {
       return concat(parts);
     case "TSNamespaceExportDeclaration":
       if (n.declaration) {
-        parts.push("export ", path.call(print, "declaration"));
+        // Temporary fix until https://github.com/eslint/typescript-eslint-parser/issues/263
+        const isDefault = options.originalText
+          .slice(util.locStart(n), util.locStart(n.declaration))
+          .match(/\bdefault\b/);
+        parts.push(
+          "export ",
+          isDefault ? "default " : "",
+          path.call(print, "declaration")
+        );
       } else {
         parts.push("export as namespace ", path.call(print, "name"));
 
@@ -3462,7 +3486,20 @@ function printExportDeclaration(path, options, print) {
   const parts = ["export "];
 
   if (decl["default"] || decl.type === "ExportDefaultDeclaration") {
-    parts.push("default ");
+    // Temp fix, delete after https://github.com/eslint/typescript-eslint-parser/issues/304
+    if (
+      decl.declaration &&
+      /=/.test(
+        options.originalText.slice(
+          util.locStart(decl),
+          util.locStart(decl.declaration)
+        )
+      )
+    ) {
+      parts.push("= ");
+    } else {
+      parts.push("default ");
+    }
   }
 
   parts.push(
