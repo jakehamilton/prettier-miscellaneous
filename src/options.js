@@ -50,7 +50,7 @@ const defaults = {
 };
 
 const exampleConfig = Object.assign({}, defaults, {
-  filename: "testFilename",
+  filepath: "path/to/Filename",
   printWidth: 80,
   originalText: "text"
 });
@@ -94,6 +94,13 @@ function normalizeTrailingComma(value) {
 // Copy options and fill in default values.
 function normalize(options) {
   const normalized = Object.assign({}, options || {});
+  const filepath = normalized.filepath;
+
+  if (/\.(css|less|scss)$/.test(filepath)) {
+    normalized.parser = "postcss";
+  } else if (/\.(ts|tsx)$/.test(filepath)) {
+    normalized.parser = "typescript";
+  }
 
   normalized.trailingComma = normalizeTrailingComma(normalized.trailingComma);
   validate(normalized, { exampleConfig, deprecatedConfig });
