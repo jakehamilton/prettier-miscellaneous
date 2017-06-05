@@ -192,7 +192,6 @@ function printDocToString(doc, options) {
               }
             // fallthrough
 
-
             case MODE_BREAK: {
               shouldRemeasure = false;
 
@@ -374,7 +373,6 @@ function printDocToString(doc, options) {
                 shouldRemeasure = true;
               }
             // fallthrough
-
 
             case MODE_BREAK:
               if (lineSuffix.length) {

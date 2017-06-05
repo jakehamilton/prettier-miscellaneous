@@ -252,29 +252,16 @@ function formatRange(text, opts, ast) {
   }
 }
 
-function formatWithShebang(text, opts) {
-  if (!text.startsWith("#!")) {
-    return format(text, opts);
-  }
-
-  const index = text.indexOf("\n");
-  const shebang = text.slice(0, index + 1);
-  const nextChar = text.charAt(index + 1);
-  const newLine = nextChar === "\n" ? "\n" : nextChar === "\r" ? "\r\n" : "";
-
-  return shebang + newLine + format(text, opts);
-}
-
 module.exports = {
   formatWithCursor: function(text, opts) {
     return formatWithCursor(text, normalizeOptions(opts));
   },
   format: function(text, opts) {
-    return formatWithShebang(text, normalizeOptions(opts));
+    return format(text, normalizeOptions(opts));
   },
   check: function(text, opts) {
     try {
-      const formatted = formatWithShebang(text, normalizeOptions(opts));
+      const formatted = format(text, normalizeOptions(opts));
       return formatted === text;
     } catch (e) {
       return false;

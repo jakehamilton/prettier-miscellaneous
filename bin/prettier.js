@@ -221,7 +221,7 @@ function format(input, opt) {
           diff(input, pp);
       }
     }
-    return;
+    return {};
   }
 
   return prettier.formatWithCursor(input, opt);
@@ -279,7 +279,8 @@ if (argv["help"] || (!filepatterns.length && !stdin)) {
       "  --align-object-properties\n" +
       "                           Align colons in multiline object literals. Does nothing if object has computed property names.\n" +
       "  --no-space-empty-fn      Omit space before empty function body. Defaults to false.\n" +
-      "  --parser <flow|babylon>  Specify which parse to use. Defaults to babylon.\n" +
+      "  --parser <flow|babylon|typescript|postcss>\n" +
+      "                           Specify which parse to use. Defaults to babylon.\n" +
       "  --cursor-offset <int>    Print (to stderr) where a cursor at the given position would move to after formatting.\n" +
       "                           This option cannot be used with --range-start and --range-end\n" +
       "  --range-start <int>      Format code starting at a given character offset.\n" +
