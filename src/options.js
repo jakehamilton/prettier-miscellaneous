@@ -34,6 +34,7 @@ const defaults = {
   tabWidth: 2,
   printWidth: 80,
   singleQuote: false,
+  jsxSingleQuote: false,
   trailingComma: Object.assign({}, defaultsTrailingComma),
   bracketSpacing: false,
   bracesSpacing: true,

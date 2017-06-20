@@ -19,6 +19,7 @@ const argv = minimist(process.argv.slice(2), {
     "use-tabs",
     "semi",
     "single-quote",
+    "jsx-single-quote",
     "bracket-spacing",
     "braces-spacing",
     "break-property",
@@ -165,6 +166,7 @@ const options = {
   flattenTernaries: argv["flatten-ternaries"],
   breakBeforeElse: argv["break-before-else"],
   singleQuote: argv["single-quote"],
+  jsxSingleQuote: argv["jsx-single-quote"],
   jsxBracketSameLine: argv["jsx-bracket-same-line"],
   alignObjectProperties: argv["align-object-properties"],
   noSpaceEmptyFn: !argv["space-empty-fn"],
@@ -249,6 +251,7 @@ if (argv["help"] || (!filepatterns.length && !stdin)) {
       "  --use-tabs               Indent lines with tabs instead of spaces.\n" +
       "  --no-semi                Do not print semicolons, except at the beginning of lines which may need them.\n" +
       "  --single-quote           Use single quotes instead of double quotes.\n" +
+      "  --jsx-single-quote       Use single quotes instead of double quotes for JSX attributes.\n" +
       "  --bracket-spacing        Print spaces between [brackets].\n" +
       "  --no-braces-spacing      Do not print spaces between {braces}.\n" +
       "  --break-property         Allow object properties to break lines.\n" +
