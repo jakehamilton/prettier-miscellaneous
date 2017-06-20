@@ -1396,15 +1396,11 @@ function genericPrintNoParens(path, options, print, args) {
 
       if (n.alternate) {
         if (n.consequent.type === "BlockStatement") {
-
-          parts.push(concat([
-            options.breakBeforeElse &&
-              isCurlyBracket(con) && // hasBraces
-              isEmptyBlock(con)
-            ? hardline
-            : " ",
-            "else"
-          ]));
+          if (options.breakBeforeElse) {
+            parts.push(hardline, "else");
+          } else {
+            parts.push(" ", "else");
+          }
         } else {
           parts.push(hardline, "else");
         }
