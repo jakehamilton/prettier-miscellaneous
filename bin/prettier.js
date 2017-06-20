@@ -29,6 +29,7 @@ const argv = minimist(process.argv.slice(2), {
     "jsx-bracket-same-line",
     "align-object-properties",
     "space-empty-fn",
+    "space-before-function-paren",
     // The supports-color package (a sub sub dependency) looks directly at
     // `process.argv` for `--no-color` and such-like options. The reason it is
     // listed here is to avoid "Ignored unknown option: --no-color" warnings.
@@ -167,6 +168,7 @@ const options = {
   jsxBracketSameLine: argv["jsx-bracket-same-line"],
   alignObjectProperties: argv["align-object-properties"],
   noSpaceEmptyFn: !argv["space-empty-fn"],
+  spaceBeforeFunctionParen: argv["space-before-function-paren"],
   filepath: argv["stdin-filepath"],
   trailingComma: getTrailingComma(),
   parser: getParserOption()
@@ -262,6 +264,8 @@ if (argv["help"] || (!filepatterns.length && !stdin)) {
       "  --align-object-properties\n" +
       "                           Align colons in multiline object literals. Does nothing if object has computed property names.\n" +
       "  --no-space-empty-fn      Omit space before empty function body. Defaults to false.\n" +
+      "  --space-before-function-paren\n" +
+      "                           Put a space before function parenthesis. Defaults to false.\n" +
       "  --parser <flow|babylon|typescript|postcss|json>\n" +
       "                           Specify which parse to use. Defaults to babylon.\n" +
       "  --cursor-offset <int>    Print (to stderr) where a cursor at the given position would move to after formatting.\n" +

@@ -47,6 +47,7 @@ const defaults = {
   noSpaceEmptyFn: false,
   parser: "babylon",
   semi: true,
+  spaceBeforeFunctionParen: false,
   __log: false
 };
 

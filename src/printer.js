@@ -2848,6 +2848,7 @@ function printMethod(path, options, print) {
           printFunctionTypeParameters(valuePath, options, print),
           group(
             concat([
+              options.spaceBeforeFunctionParen ? " " : "",
               printFunctionParams(valuePath, print, options),
               printReturnType(valuePath, print)
             ])
@@ -3175,6 +3176,7 @@ function printFunctionDeclaration(path, print, options) {
     printFunctionTypeParameters(path, options, print),
     group(
       concat([
+        options.spaceBeforeFunctionParen ? " " : "",
         printFunctionParams(path, print, options),
         printReturnType(path, print)
       ])
@@ -3217,6 +3219,7 @@ function printObjectMethod(path, options, print) {
     printFunctionTypeParameters(path, options, print),
     group(
       concat([
+        options.spaceBeforeFunctionParen ? " " : "",
         printFunctionParams(path, print, options),
         printReturnType(path, print)
       ])
