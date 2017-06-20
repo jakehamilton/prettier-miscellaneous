@@ -165,10 +165,10 @@ const options = {
   breakBeforeElse: argv["break-before-else"],
   singleQuote: argv["single-quote"],
   jsxBracketSameLine: argv["jsx-bracket-same-line"],
+  alignObjectProperties: argv["align-object-properties"],
   noSpaceEmptyFn: !argv["space-empty-fn"],
   filepath: argv["stdin-filepath"],
   trailingComma: getTrailingComma(),
-  alignObjectProperties: argv["align-object-properties"],
   parser: getParserOption()
 };
 
