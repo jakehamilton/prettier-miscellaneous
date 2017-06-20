@@ -159,8 +159,6 @@ Install:
 
 ```
 yarn add prettier-miscellaneous --dev
-=======
-yarn add prettier --dev
 ```
 
 You can install it globally if you like:
