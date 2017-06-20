@@ -3,7 +3,7 @@
 const assert = require("assert");
 const comments = require("./comments");
 const FastPath = require("./fast-path");
-const getSubtreeParser = require("./multiparser").getSubtreeParser;
+const multiparser = require("./multiparser");
 const util = require("./util");
 const isIdentifierName = require("esutils").keyword.isIdentifierNameES6;
 
@@ -64,18 +64,17 @@ function genericPrint(path, options, printPath, args) {
 
   if (node) {
     // Potentially switch to a different parser
-    const nextParser = getSubtreeParser(path, options);
-
-    if (nextParser && nextParser.parser !== options.parser) {
-      const nextOptions = Object.assign({}, options, {
-        parser: nextParser.parser
-      });
+    const next = multiparser.getSubtreeParser(path, options);
+    if (next) {
       try {
-        const ast = require("./parser").parse(nextParser.text, nextOptions);
-        const nextDoc = printAstToDoc(ast, nextOptions);
-
-        return nextParser.wrap ? nextParser.wrap(nextDoc) : nextDoc;
+        const expressionDocs = node.expressions
+          ? path.map(printPath, "expressions")
+          : [];
+        return multiparser.printSubtree(next, options, expressionDocs);
       } catch (error) {
+        if (process.env.PRETTIER_DEBUG) {
+          console.error(error);
+        }
         // Continue with current parser
       }
     }
@@ -649,6 +648,9 @@ function genericPrintNoParens(path, options, print, args) {
       }
 
       return path.call(print, "id");
+    case "TSExportAssigment": {
+      return concat(["export = ", path.call(print, "expression"), semi]);
+    }
     case "ExportDeclaration":
     case "ExportDefaultDeclaration":
     case "ExportNamedDeclaration":
@@ -731,7 +733,13 @@ function genericPrintNoParens(path, options, print, args) {
         }
 
         parts.push(" ", "from ");
-      } else if (n.importKind && n.importKind === "type") {
+      } else if (
+        (n.importKind && n.importKind === "type") ||
+        // import {} from 'x'
+        /{\s*}/.test(
+          options.originalText.slice(util.locStart(n), util.locStart(n.source))
+        )
+      ) {
         parts.push("{} from ");
       }
 
@@ -910,12 +918,13 @@ function genericPrintNoParens(path, options, print, args) {
     case "TSTypeLiteral": {
       const isTypeAnnotation = n.type === "ObjectTypeAnnotation";
       const shouldBreak =
-        n.type !== "ObjectPattern" &&
-        util.hasNewlineInRange(
-          options.originalText,
-          util.locStart(n),
-          util.locEnd(n)
-        );
+        n.type === "TSInterfaceBody" ||
+        (n.type !== "ObjectPattern" &&
+          util.hasNewlineInRange(
+            options.originalText,
+            util.locStart(n),
+            util.locEnd(n)
+          ));
       const separator = n.type === "TSInterfaceBody" ||
         n.type === "TSTypeLiteral"
         ? ifBreak(semi, ";")
@@ -1665,11 +1674,6 @@ function genericPrintNoParens(path, options, print, args) {
 
       return concat(parts);
     case "JSXIdentifier":
-      // Can be removed when this is fixed:
-      // https://github.com/eslint/typescript-eslint-parser/issues/307
-      if (!n.name) {
-        return "this";
-      }
       return "" + n.name;
     case "JSXNamespacedName":
       return join(":", [
@@ -2214,6 +2218,7 @@ function genericPrintNoParens(path, options, print, args) {
     }
     case "NullableTypeAnnotation":
       return concat(["?", path.call(print, "typeAnnotation")]);
+    case "TSNullKeyword":
     case "NullLiteralTypeAnnotation":
       return "null";
     case "ThisTypeAnnotation":
@@ -2514,12 +2519,14 @@ function genericPrintNoParens(path, options, print, args) {
       }
 
       parts.push(
-        printFunctionParams(
-          path,
-          print,
-          options,
-          /* expandArg */ false,
-          /* printTypeParams */ true
+        group(
+          printFunctionParams(
+            path,
+            print,
+            options,
+            /* expandArg */ false,
+            /* printTypeParams */ true
+          )
         )
       );
 
@@ -2588,13 +2595,9 @@ function genericPrintNoParens(path, options, print, args) {
       return group(concat(parts));
     case "TSNamespaceExportDeclaration":
       if (n.declaration) {
-        // Temporary fix until https://github.com/eslint/typescript-eslint-parser/issues/263
-        const isDefault = options.originalText
-          .slice(util.locStart(n), util.locStart(n.declaration))
-          .match(/\bdefault\b/);
         parts.push(
           "export ",
-          isDefault ? "default " : "",
+          n.default ? "default " : "",
           path.call(print, "declaration")
         );
       } else {
@@ -2726,6 +2729,8 @@ function genericPrintNoParens(path, options, print, args) {
       return path.call(bodyPath => {
         return printStatementSequence(bodyPath, options, print);
       }, "body");
+    case "json-identifier":
+      return '"' + n.value + '"';
 
     default:
       throw new Error("unknown type: " + JSON.stringify(n.type));
@@ -3060,9 +3065,9 @@ function printFunctionParams(path, print, options, expandArg, printTypeParams) {
   if (expandArg) {
     return group(
       concat([
-        removeLines(typeParams),
+        docUtils.removeLines(typeParams),
         "(",
-        join(", ", printed.map(removeLines)),
+        join(", ", printed.map(docUtils.removeLines)),
         ")"
       ])
     );
@@ -3247,20 +3252,7 @@ function printExportDeclaration(path, options, print) {
   const parts = ["export "];
 
   if (decl["default"] || decl.type === "ExportDefaultDeclaration") {
-    // Temp fix, delete after https://github.com/eslint/typescript-eslint-parser/issues/304
-    if (
-      decl.declaration &&
-      /=/.test(
-        options.originalText.slice(
-          util.locStart(decl),
-          util.locStart(decl.declaration)
-        )
-      )
-    ) {
-      parts.push("= ");
-    } else {
-      parts.push("default ");
-    }
+    parts.push("default ");
   }
 
   parts.push(
@@ -3274,7 +3266,8 @@ function printExportDeclaration(path, options, print) {
       decl.type === "ExportDefaultDeclaration" &&
       (decl.declaration.type !== "ClassDeclaration" &&
         decl.declaration.type !== "FunctionDeclaration" &&
-        decl.declaration.type !== "TSAbstractClassDeclaration")
+        decl.declaration.type !== "TSAbstractClassDeclaration" &&
+        decl.declaration.type !== "TSNamespaceFunctionDeclaration")
     ) {
       parts.push(semi);
     }
@@ -4258,9 +4251,9 @@ function nodeStr(node, options, isFlowOrTypeScriptDirectiveLiteral) {
     canChangeDirectiveQuotes = true;
   }
 
-  const enclosingQuote = shouldUseAlternateQuote
-    ? alternate.quote
-    : preferred.quote;
+  const enclosingQuote = options.parser === "json"
+    ? double.quote
+    : shouldUseAlternateQuote ? alternate.quote : preferred.quote;
 
   // Directives are exact code unit sequences, which means that you can't
   // change the escape sequences they use.
@@ -4623,7 +4616,7 @@ function shouldHugType(node) {
         n.type === "VoidTypeAnnotation" ||
         n.type === "TSVoidKeyword" ||
         n.type === "NullLiteralTypeAnnotation" ||
-        (n.type === "Literal" && n.value === null)
+        n.type === "TSNullKeyword"
     ).length;
 
     const objectCount = node.types.filter(
@@ -4721,21 +4714,6 @@ function isStringLiteral(node) {
   );
 }
 
-function removeLines(doc) {
-  // Force this doc into flat mode by statically converting all
-  // lines into spaces (or soft lines into nothing). Hard lines
-  // should still output because there's too great of a chance
-  // of breaking existing assumptions otherwise.
-  return docUtils.mapDoc(doc, d => {
-    if (d.type === "line" && !d.hard) {
-      return d.soft ? "" : " ";
-    } else if (d.type === "if-break") {
-      return d.flatContents || "";
-    }
-    return d;
-  });
-}
-
 function isObjectType(n) {
   return n.type === "ObjectTypeAnnotation" || n.type === "TSTypeLiteral";
 }
@@ -4770,7 +4748,7 @@ function printAstToDoc(ast, options, addAlignmentSize) {
     // Add a hardline to make the indents take effect
     // It should be removed in index.js format()
     doc = addAlignmentToDoc(
-      removeLines(concat([hardline, doc])),
+      docUtils.removeLines(concat([hardline, doc])),
       addAlignmentSize,
       options.tabWidth
     );

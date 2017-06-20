@@ -4,7 +4,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const getStdin = require("get-stdin");
+const getStream = require("get-stream");
 const glob = require("glob");
 const chalk = require("chalk");
 const minimist = require("minimist");
@@ -79,7 +79,7 @@ const write = argv["write"];
 const stdin = argv["stdin"] || (!filepatterns.length && !process.stdin.isTTY);
 const ignoreNodeModules = argv["with-node-modules"] === false;
 const globOptions = {
-  ignore: ignoreNodeModules && "**/node_modules/**",
+  ignore: ignoreNodeModules && ["**/node_modules/**", "./node_modules/**"],
   dot: true
 };
 
@@ -262,7 +262,7 @@ if (argv["help"] || (!filepatterns.length && !stdin)) {
       "  --align-object-properties\n" +
       "                           Align colons in multiline object literals. Does nothing if object has computed property names.\n" +
       "  --no-space-empty-fn      Omit space before empty function body. Defaults to false.\n" +
-      "  --parser <flow|babylon|typescript|postcss>\n" +
+      "  --parser <flow|babylon|typescript|postcss|json>\n" +
       "                           Specify which parse to use. Defaults to babylon.\n" +
       "  --cursor-offset <int>    Print (to stderr) where a cursor at the given position would move to after formatting.\n" +
       "                           This option cannot be used with --range-start and --range-end\n" +
@@ -283,7 +283,7 @@ if (argv["help"] || (!filepatterns.length && !stdin)) {
 }
 
 if (stdin) {
-  getStdin().then(input => {
+  getStream(process.stdin).then(input => {
     try {
       writeOutput(format(input, options));
     } catch (e) {

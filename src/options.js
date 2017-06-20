@@ -67,6 +67,8 @@ function normalize(options) {
     normalized.parser = "parse5";
   } else if (/\.(ts|tsx)$/.test(filepath)) {
     normalized.parser = "typescript";
+  } else if (/\.json$/.test(filepath)) {
+    normalized.parser = "json";
   }
 
   normalized.trailingComma = normalizeTrailingComma(normalized.trailingComma);
