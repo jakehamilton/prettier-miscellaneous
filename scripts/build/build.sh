@@ -50,7 +50,8 @@ echo;
 ## --- Misc ---
 
 echo 'Remove eval'
-perl -pi -e 's/eval\("require"\)/require/g' dist/index.js dist/bin/prettier.js
+sed --in-place='' -e 's/eval("require")/require/g' dist/index.js dist/bin/prettier.js
+#perl -pi -e 's/eval\("require"\)/require/g' dist/index.js dist/bin/prettier.js
 
 echo 'Create prettier-version.js'
 node -p '`prettierVersion = "${require(".").version}";`' > docs/lib/prettier-version.js

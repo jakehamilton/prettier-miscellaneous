@@ -220,11 +220,7 @@ yarn global add prettier-miscellaneous
 *We're using `yarn` but you can use `npm` if you like:*
 
 ```
-<<<<<<< HEAD
-npm install [-g] prettier-miscellaneous
-=======
-npm install [--save-dev|--global] prettier
->>>>>>> prettier-master
+npm install [--save-dev|--global] prettier-miscellaneous
 ```
 
 ### CLI
@@ -365,8 +361,6 @@ echo >&2 "node_modules/.bin/prettier --write "$diffs""
 exit 1
 ```
 
-<<<<<<< HEAD
-
 ### Options
 
 Prettier ships with a handful of customizable format options, usable in both the CLI and API.
@@ -393,21 +387,15 @@ Prettier ships with a handful of customizable format options, usable in both the
 | **Parser** - Specify which parser to use. Both the `babylon` and `flow` parsers support the same set of JavaScript features (including Flow). Prettier automatically infers the parser from the input file path, so you shouldn't have to change this setting. <br />Built-in parsers: <ul><li>`babylon`</li><li>`flow`</li><li>`typescript`</li><li>`postcss`</li><li>`json`</li></ul>[Custom parsers](#custom-parser-api) are also supported. | `babylon` | CLI: <br />`--parser <string>` <br />`--parser ./path/to/my-parser` <br />API: <br />`parser: "<string>"` <br />`parser: require("./my-parser")` |
 | **Filepath** - Specify the input filepath this will be used to do parser inference.<br /><br /> Example: <br />`cat foo \| prettier --stdin-filepath foo.css`<br /> will default to use `postcss` parser |  | CLI: `--stdin-filepath` <br />API: `filepath: "<string>"` |
 
-=======
->>>>>>> prettier-master
 ### API
 
 The API has three functions:  `format`, `check`, and `formatWithCursor`.
 
 ```js
-<<<<<<< HEAD
 const prettier = require("prettier-miscellaneous");
-=======
-const prettier = require("prettier");
 ```
 
 #### `prettier.format(source [, options])`
->>>>>>> prettier-master
 
 `format` is used to format text using Prettier. [Options](#options) may be provided to override the defaults.
 
