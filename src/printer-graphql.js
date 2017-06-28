@@ -41,6 +41,7 @@ function genericPrint(path, options, print) {
                     )
                   ])
                 ),
+                options.trailingComma["array"] ? ifBreak(",") : "", // @TODO improve this
                 softline,
                 ")"
               ])
@@ -90,6 +91,7 @@ function genericPrint(path, options, print) {
                       )
                     ])
                   ),
+                  options.trailingComma["array"] ? ifBreak(",") : "", // @TODO improve this
                   softline,
                   ")"
                 ])
@@ -134,6 +136,7 @@ function genericPrint(path, options, print) {
               )
             ])
           ),
+          options.trailingComma["array"] ? ifBreak(",") : "",
           softline,
           "]"
         ])
@@ -143,7 +146,7 @@ function genericPrint(path, options, print) {
       return group(
         concat([
           "{",
-          n.fields.length > 0 ? " " : "",
+          options.bracesSpacing && n.fields.length > 0 ? " " : "",
           indent(
             concat([
               softline,
@@ -153,8 +156,9 @@ function genericPrint(path, options, print) {
               )
             ])
           ),
+          options.trailingComma["object"] ? ifBreak(",") : "",
           softline,
-          ifBreak("", n.fields.length > 0 ? " " : ""),
+          ifBreak("", options.bracesSpacing && n.fields.length > 0 ? " " : ""),
           "}"
         ])
       );
@@ -185,6 +189,7 @@ function genericPrint(path, options, print) {
                     )
                   ])
                 ),
+                options.trailingComma["array"] ? ifBreak(",") : "", // @TODO improve this
                 softline,
                 ")"
               ])

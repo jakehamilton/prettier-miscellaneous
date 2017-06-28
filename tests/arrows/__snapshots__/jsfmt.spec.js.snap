@@ -22,17 +22,16 @@ a = () => ({} = 0);
 a = () => ({}, a);
 a => a instanceof {};
 a => ({}().b && 0)
-a => ({}::b()\`\`[''].c++ && 0 ? 0 : 0)
 a => ({}().c = 0)
 x => ({}()())
 x => ({}()\`\`)
 x => ({}().b);
-(a => b)::c;
-a::(b => c);
 a = b => c;
 a = (b?) => c;
 x => (y = z);
 x => (y += z);
+f(a => ({})) + 1;
+(a => ({})) || 0;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 (a => {}).length;
 typeof (() => {});
@@ -56,17 +55,16 @@ a = () => ({} = 0);
 a = () => ({}, a);
 a => a instanceof {};
 a => ({}().b && 0);
-a => ({}::b()\`\`[""].c++ && 0 ? 0 : 0);
 a => ({}().c = 0);
 x => ({}()());
 x => ({}()\`\`);
 x => ({}().b);
-(a => b)::c;
-a::(b => c);
 a = b => c;
 a = (b?) => c;
 x => (y = z);
 x => (y += z);
+f(a => ({})) + 1;
+(a => ({})) || 0;
 
 `;
 
@@ -92,17 +90,16 @@ a = () => ({} = 0);
 a = () => ({}, a);
 a => a instanceof {};
 a => ({}().b && 0)
-a => ({}::b()\`\`[''].c++ && 0 ? 0 : 0)
 a => ({}().c = 0)
 x => ({}()())
 x => ({}()\`\`)
 x => ({}().b);
-(a => b)::c;
-a::(b => c);
 a = b => c;
 a = (b?) => c;
 x => (y = z);
 x => (y += z);
+f(a => ({})) + 1;
+(a => ({})) || 0;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ((a) => {}).length;
 typeof (() => {});
@@ -126,17 +123,16 @@ a = () => ({} = 0);
 a = () => ({}, a);
 (a) => a instanceof {};
 (a) => ({}().b && 0);
-(a) => ({}::b()\`\`[""].c++ && 0 ? 0 : 0);
 (a) => ({}().c = 0);
 (x) => ({}()());
 (x) => ({}()\`\`);
 (x) => ({}().b);
-((a) => b)::c;
-a::((b) => c);
 a = (b) => c;
 a = (b?) => c;
 (x) => (y = z);
 (x) => (y += z);
+f((a) => ({})) + 1;
+((a) => ({})) || 0;
 
 `;
 
@@ -556,6 +552,13 @@ export const bem = block =>
         element ? \`__\${css(element)}\` : "",
         modifier ? \`--\${css(modifier)}\` : ""
       ].join("");
+
+<FlatList
+  renderItem={(
+    info, // $FlowExpectedError - bad widgetCount type 6, should be Object
+  ) => <span>{info.item.widget.missingProp}</span>}
+  data={data}
+/>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /**
  * Curried function that ends with a BEM CSS Selector
@@ -580,6 +583,16 @@ export const bem = block =>
         element ? \`__\${css(element)}\` : "",
         modifier ? \`--\${css(modifier)}\` : ""
       ].join("");
+
+<FlatList
+  renderItem={(
+    info // $FlowExpectedError - bad widgetCount type 6, should be Object
+  ) =>
+    <span>
+      {info.item.widget.missingProp}
+    </span>}
+  data={data}
+/>;
 
 `;
 
@@ -607,6 +620,13 @@ export const bem = block =>
         element ? \`__\${css(element)}\` : "",
         modifier ? \`--\${css(modifier)}\` : ""
       ].join("");
+
+<FlatList
+  renderItem={(
+    info, // $FlowExpectedError - bad widgetCount type 6, should be Object
+  ) => <span>{info.item.widget.missingProp}</span>}
+  data={data}
+/>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /**
  * Curried function that ends with a BEM CSS Selector
@@ -631,6 +651,16 @@ export const bem = (block) =>
         element ? \`__\${css(element)}\` : "",
         modifier ? \`--\${css(modifier)}\` : ""
       ].join("");
+
+<FlatList
+  renderItem={(
+    info // $FlowExpectedError - bad widgetCount type 6, should be Object
+  ) =>
+    <span>
+      {info.item.widget.missingProp}
+    </span>}
+  data={data}
+/>;
 
 `;
 
