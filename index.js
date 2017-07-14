@@ -1,5 +1,6 @@
 "use strict";
 
+const stripBom = require("strip-bom");
 const comments = require("./src/comments");
 const version = require("./package.json").version;
 const printAstToDoc = require("./src/printer").printAstToDoc;
@@ -8,6 +9,7 @@ const printDocToString = require("./src/doc-printer").printDocToString;
 const normalizeOptions = require("./src/options").normalize;
 const parser = require("./src/parser");
 const printDocToDebug = require("./src/doc-debug").printDocToDebug;
+const config = require("./src/resolve-config");
 
 function guessLineEnding(text) {
   const index = text.indexOf("\n");
@@ -54,6 +56,7 @@ function ensureAllCommentsPrinted(astComments) {
 }
 
 function formatWithCursor(text, opts, addAlignmentSize) {
+  text = stripBom(text);
   addAlignmentSize = addAlignmentSize || 0;
 
   const ast = parser.parse(text, opts);
@@ -280,48 +283,52 @@ function calculateRange(text, opts, ast) {
 }
 
 function formatRange(text, opts, ast) {
-  if (0 < opts.rangeStart || opts.rangeEnd < text.length) {
-    const range = calculateRange(text, opts, ast);
-    const rangeStart = range.rangeStart;
-    const rangeEnd = range.rangeEnd;
-    const rangeString = text.slice(rangeStart, rangeEnd);
-
-    // Try to extend the range backwards to the beginning of the line.
-    // This is so we can detect indentation correctly and restore it.
-    // Use `Math.min` since `lastIndexOf` returns 0 when `rangeStart` is 0
-    const rangeStart2 = Math.min(
-      rangeStart,
-      text.lastIndexOf("\n", rangeStart) + 1
-    );
-    const indentString = text.slice(rangeStart2, rangeStart);
-
-    const alignmentSize = util.getAlignmentSize(indentString, opts.tabWidth);
-
-    const rangeFormatted = format(
-      rangeString,
-      Object.assign({}, opts, {
-        rangeStart: 0,
-        rangeEnd: Infinity,
-        printWidth: opts.printWidth - alignmentSize
-      }),
-      alignmentSize
-    );
-
-    // Since the range contracts to avoid trailing whitespace,
-    // we need to remove the newline that was inserted by the `format` call.
-    const rangeTrimmed = rangeFormatted.trimRight();
-
-    return text.slice(0, rangeStart) + rangeTrimmed + text.slice(rangeEnd);
+  if (opts.rangeStart <= 0 && text.length <= opts.rangeEnd) {
+    return;
   }
+
+  const range = calculateRange(text, opts, ast);
+  const rangeStart = range.rangeStart;
+  const rangeEnd = range.rangeEnd;
+  const rangeString = text.slice(rangeStart, rangeEnd);
+
+  // Try to extend the range backwards to the beginning of the line.
+  // This is so we can detect indentation correctly and restore it.
+  // Use `Math.min` since `lastIndexOf` returns 0 when `rangeStart` is 0
+  const rangeStart2 = Math.min(
+    rangeStart,
+    text.lastIndexOf("\n", rangeStart) + 1
+  );
+  const indentString = text.slice(rangeStart2, rangeStart);
+
+  const alignmentSize = util.getAlignmentSize(indentString, opts.tabWidth);
+
+  const rangeFormatted = format(
+    rangeString,
+    Object.assign({}, opts, {
+      rangeStart: 0,
+      rangeEnd: Infinity,
+      printWidth: opts.printWidth - alignmentSize
+    }),
+    alignmentSize
+  );
+
+  // Since the range contracts to avoid trailing whitespace,
+  // we need to remove the newline that was inserted by the `format` call.
+  const rangeTrimmed = rangeFormatted.trimRight();
+
+  return text.slice(0, rangeStart) + rangeTrimmed + text.slice(rangeEnd);
 }
 
 module.exports = {
   formatWithCursor: function(text, opts) {
     return formatWithCursor(text, normalizeOptions(opts));
   },
+
   format: function(text, opts) {
     return format(text, normalizeOptions(opts));
   },
+
   check: function(text, opts) {
     try {
       const formatted = format(text, normalizeOptions(opts));
@@ -330,7 +337,12 @@ module.exports = {
       return false;
     }
   },
-  version: version,
+
+  resolveConfig: config.resolveConfig,
+  clearConfigCache: config.clearCache,
+
+  version,
+
   __debug: {
     parse: function(text, opts) {
       return parser.parse(text, opts);
