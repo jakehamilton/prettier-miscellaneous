@@ -3,6 +3,7 @@
 [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/jlongster/prettier)
 [![Build Status](https://travis-ci.org/arijs/prettier-miscellaneous.svg?branch=master)](https://travis-ci.org/arijs/prettier-miscellaneous)
 [![CircleCI Status](https://circleci.com/gh/arijs/prettier-miscellaneous.svg?style=shield&circle-token=5b135ff8817790a20e0eb1c5853752b931bc42c0)](https://circleci.com/gh/arijs/prettier-miscellaneous)
+[![Codecov](https://img.shields.io/codecov/c/github/arijs/prettier-miscellaneous.svg)](https://codecov.io/gh/arijs/prettier-miscellaneous)
 [![NPM version](https://img.shields.io/npm/v/prettier-miscellaneous.svg)](https://www.npmjs.com/package/prettier-miscellaneous)
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier_misc-ff69b4.svg)](https://github.com/arijs/prettier-miscellaneous)
 
@@ -13,7 +14,6 @@
 > If you want to add an option to Prettier Miscellaneous, please send a PR! 😃
 >
 > ![Happyness](https://i.redd.it/p63sznfyu38y.jpg)
-
 
 Prettier is an opinionated code formatter with support for:
 * JavaScript, including [ES2017](https://github.com/tc39/proposals/blob/master/finished-proposals.md)

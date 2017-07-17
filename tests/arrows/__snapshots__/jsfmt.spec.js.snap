@@ -797,3 +797,17 @@ const initializeSnapshotState = (
 ) => new SnapshotState(testFile, update, testPath, expand);
 
 `;
+
+exports[`type_params.js 1`] = `
+<T>(a) => { }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<T>(a) => {};
+
+`;
+
+exports[`type_params.js 2`] = `
+<T>(a) => { }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<T>(a) => {};
+
+`;
