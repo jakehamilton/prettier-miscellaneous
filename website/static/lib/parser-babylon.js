@@ -19,7 +19,7 @@ var babylon = function () {
 			return e = { exports: {} }, t(e, e.exports), e.exports;
 		}function parse(t) {
 			var e = index,
-			    s = { sourceType: "module", allowImportExportEverywhere: !0, allowReturnOutsideFunction: !0, plugins: ["jsx", "flow", "doExpressions", "objectRestSpread", "decorators", "classProperties", "exportExtensions", "asyncGenerators", "functionBind", "functionSent", "dynamicImport", "numericSeparator"] };var i = void 0;try {
+			    s = { sourceType: "module", allowImportExportEverywhere: !0, allowReturnOutsideFunction: !0, plugins: ["jsx", "flow", "doExpressions", "objectRestSpread", "decorators", "classProperties", "exportExtensions", "asyncGenerators", "functionBind", "functionSent", "dynamicImport", "numericSeparator", "importMeta"] };var i = void 0;try {
 				i = e.parse(t, s);
 			} catch (r) {
 				try {
